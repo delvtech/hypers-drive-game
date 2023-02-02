@@ -1,5 +1,5 @@
-import { startGame } from "./game";
-import "./style.css";
+import { startGame } from './game'
+import './style.css'
 
 // document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
 //   <div>
@@ -19,4 +19,4 @@ import "./style.css";
 //   </div>
 // `;
 
-startGame();
+startGame()

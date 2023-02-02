@@ -1,6 +1,6 @@
-import kaboom from "kaboom";
+import kaboom from 'kaboom'
 
 export function startGame() {
-  kaboom();
-  add([text("hello"), pos(120, 80)]);
+    kaboom()
+    add([text('hello'), pos(120, 80)])
 }
