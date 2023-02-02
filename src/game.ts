@@ -2,19 +2,23 @@ import kaboom from "kaboom";
 
 export function startGame() {
   // Start a kaboom game
-  const k = kaboom();
+  const k = kaboom({
+    background: [20, 20, 20],
+  });
   const origin = k.origin;
 
   k.loadSprite("bird", "/bird.png");
 
   // Components
-  function Bar(topOrBottom: "top" | "bottom", barHeight: number) {
+  function Bar(position: "top" | "bottom", barHeight: number) {
     const bar = add([
       "obstacle",
-      rect(100, barHeight),
+      rect(30, barHeight),
       area(),
-      origin(topOrBottom === "top" ? "top" : "bot"),
-      pos(width(), topOrBottom === "top" ? 0 : height()),
+      origin(position === "top" ? "top" : "bot"),
+      pos(width(), position === "top" ? 0 : height()),
+      position === "top" ? color(255, 0, 0) : color(0, 255, 0),
+      handleout(),
     ]);
 
     bar.onUpdate(() => {
@@ -29,9 +33,11 @@ export function startGame() {
 
   let liquidity = 100_000;
   const gap = 300;
-  let chance = function Short(amount) {
-    const short = Bar("bottom", amount / liquidity);
-  };
+  let chance = 0.75;
+
+  // function Short() {
+  //   const short = Bar("bottom", amount / liquidity);
+  // }
 
   scene("game", () => {
     const bottom = add([
@@ -45,10 +51,9 @@ export function startGame() {
     ]);
     // add() assembles a game object from a list of components and add to game, returns the reference of the game object
     const player = add([
-      sprite("bird"), // sprite() component makes it render as a sprite
-      pos(120, 80), // pos() component gives it position, also enables movement
-      rotate(0), // rotate() component gives it rotation
-      origin("center"), // origin() component defines the pivot point (defaults to "topleft")
+      sprite("bird"),
+      pos(120, 80),
+      origin("center"),
       area(),
       body({
         maxVel: 300,
@@ -60,10 +65,11 @@ export function startGame() {
       go("gameover");
     });
 
-    loop(1, () => {
-      const topBarHeight = randNum(100, height() / 2);
-      Bar("top", topBarHeight);
-      Bar("bottom", height() - topBarHeight - gap);
+    loop(2, () => {
+      const hasEvent = Math.random() < chance;
+      if (hasEvent) {
+        Bar(Math.random() > 0.5 ? "top" : "bottom", randNum(100, height() / 2));
+      }
     });
 
     onKeyPress("space", () => player.jump(400));
@@ -85,4 +91,19 @@ export function startGame() {
   });
 
   go("game");
+}
+
+// delete when out of screen
+function handleout() {
+  return {
+    id: "handleout",
+    require: ["pos"],
+    update() {
+      const spos = this.screenPos();
+      if (spos.x > width() + 20 || spos.y < 0 || spos.y > height()) {
+        // triggers a custom event when out
+        this.trigger("out");
+      }
+    },
+  };
 }
