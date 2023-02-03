@@ -1,4 +1,5 @@
-import kaboom, { GameObj, TextComp } from "kaboom";
+import kaboom, { GameObj, TextComp, KaboomCtx } from "kaboom";
+import { PatchedBodyCompOpt } from "./@types";
 import { GameStorage, MAX_LIQUIDITY, MIN_LIQUIDITY } from "./GameStorage";
 import { commify, gcd, getRandomInt, randNum, scale } from "./utils";
 
@@ -73,13 +74,17 @@ export function startGame() {
   const k = kaboom({
     background: [20, 20, 20],
   });
-  const origin = k.origin;
+  const origin = k.anchor;
 
   // Load classes
   let gameStorage = new GameStorage();
 
+  // // Load fonts
+  // k.loadFont("MarioKartDS", "/Mario-Kart-DS.ttf");
+  // type Fonts = "MarioKartDS";
+
   // Load sprites
-  loadSprite("bird", "/bird.png");
+  k.loadSprite("bird", "/bird.png");
 
   // Stats
   type Stat = "LIQUIDITY" | "SCORE" | "VOLUME" | "LONGS" | "SHORTS" | "PNL";
@@ -87,9 +92,11 @@ export function startGame() {
   let stats: Record<Stat, GameObj> = {} as Record<Stat, GameObj>;
 
   function updateStat(stat: Stat, value: string | number) {
-    stats[stat].text = `${stat}: ${
-      typeof value === "number" ? commify(value) : value
-    }`;
+    if (stats[stat]) {
+      stats[stat].text = `${stat}: ${
+        typeof value === "number" ? commify(value) : value
+      }`;
+    }
   }
 
   // Components
@@ -100,16 +107,16 @@ export function startGame() {
       GameObj<TextComp>
     >;
     stats.forEach(([label, value], i) => {
-      statsByLabel[label] = add([
-        text(
+      statsByLabel[label] = k.add([
+        k.text(
           `${label}: ${typeof value === "number" ? commify(value) : value}`,
           {
             size: 18,
           }
         ),
-        pos(20, 20 * (i + 1)),
+        k.pos(20, 20 * (i + 1)),
         origin("topleft"),
-        z(10),
+        k.z(10),
       ]);
     });
     return statsByLabel;
@@ -120,15 +127,15 @@ export function startGame() {
     barHeight: number,
     barColor: number[]
   ) {
-    const bar = add([
+    const bar = k.add([
       "bar",
-      solid(),
-      rect(100, barHeight),
-      area(),
+      k.body({ isSolid: true, isStatic: true } as PatchedBodyCompOpt),
+      k.rect(100, barHeight),
+      k.area(),
       origin(position === "top" ? "topleft" : "botleft"),
-      pos(width(), position === "top" ? 0 : height()),
-      color(...(barColor as [number, number, number])),
-      handleout(),
+      k.pos(k.width(), position === "top" ? 0 : k.height()),
+      k.color(...(barColor as [number, number, number])),
+      handleout(k),
     ]);
 
     bar.onUpdate(() => {
@@ -136,53 +143,101 @@ export function startGame() {
     });
   }
 
-  // Scenes
-  scene("game", () => {
-    // boundaries
-    add([
-      "top",
-      "obstacle",
-      rect(width(), 4),
-      pos(0, 0),
-      origin("topleft"),
-      area(),
-      solid(),
-      color(255, 0, 0),
+  k.scene("start", () => {
+    k.add([
+      k.text("HYPERS - DRIVE"),
+      k.pos(k.width() / 2, 50),
+      origin("center"),
     ]);
-    add([
-      "bottom",
-      "obstacle",
-      rect(width(), 4),
-      pos(0, height()),
-      origin("botleft"),
-      area(),
-      solid(),
-      color(255, 0, 0),
-    ]);
-    add([
-      "left",
-      "obstacle",
-      rect(4, height()),
-      pos(0, 0),
-      origin("topleft"),
-      area(),
-      solid(),
-      color(255, 0, 0),
+    k.add([
+      k.text("Press R to restart", {
+        size: 20,
+      }),
+      k.pos(k.width() / 2, 250),
+      origin("center"),
     ]);
 
-    const player = add([
-      sprite("bird"),
-      pos(width() / 3, 80),
+    // const statObjects = Object.values(stats);
+
+    // statObjects.forEach((stat, i) => {
+    //   readd(stat);
+    //   stat.pos.x = width() / 2;
+    //   stat.pos.y = 270 + 20 * (i + 1);
+    //   stat.origin = "center";
+    // });
+
+    // const highScore = localStorage.highScore || 0;
+    // if (gameStorage.score > highScore) {
+    //   localStorage.highScore = gameStorage.score;
+    // }
+
+    // add([
+    //   text(`HIGH SCORE: ${localStorage.highScore}`, {
+    //     size: 18,
+    //   }),
+    //   pos(width() / 2, statObjects[statObjects.length - 1].pos.y + 40),
+    //   origin("center"),
+    // ]);
+
+    // Event callback handlers
+    k.onKeyPress("space", () => {
+      gameStorage = new GameStorage();
+      gameStorage.liquidity = MAX_LIQUIDITY;
+      updateStat("SCORE", gameStorage.score);
+      updateStat("LIQUIDITY", gameStorage.liquidity);
+      k.go("game");
+    });
+  });
+
+  // Scenes
+  k.scene("game", () => {
+    k.setGravity(1750);
+    // boundaries
+    k.add([
+      "top",
+      "obstacle",
+      k.rect(k.width(), 4),
+      k.pos(0, 0),
+      origin("topleft"),
+      k.area(),
+      k.body({ isSolid: true, isStatic: true } as PatchedBodyCompOpt),
+      k.color(255, 0, 0),
+    ]);
+    k.add([
+      "bottom",
+      "obstacle",
+      k.rect(k.width(), 4),
+      k.pos(0, k.height()),
+      origin("botleft"),
+      k.area(),
+      k.body({ isSolid: true, isStatic: true } as PatchedBodyCompOpt),
+      k.color(255, 0, 0),
+    ]);
+    k.add([
+      "left",
+      "obstacle",
+      k.rect(4, k.height()),
+      k.pos(0, 0),
+      origin("topleft"),
+      k.area(),
+      k.body({ isSolid: true, isStatic: true } as PatchedBodyCompOpt),
+      k.color(255, 0, 0),
+    ]);
+
+    const player = k.add([
+      k.sprite("bird"),
+      k.pos(k.width() / 3, 80),
       origin("center"),
-      area(),
-      body({
+      k.area(),
+      k.body({
+        // @ts-ignore
         maxVel: FALLING_VELOCITY,
       }),
     ]);
 
     player.onCollide("obstacle", () => {
-      destroy(player);
-      go("gameover");
+      k.destroy(player);
+      k.go("gameover");
     });
 
     stats = Stats([
@@ -196,7 +251,7 @@ export function startGame() {
     let lastTopBarHeight: number;
     let currentDeviationCooldown = DEVIATION_COOLDOWN;
 
-    loop(TIC_RATE, () => {
+    k.loop(TIC_RATE, () => {
       const event = generateGameEvent();
       const eventAmount = randNum(100, gameStorage.liquidity);
 
@@ -228,20 +283,20 @@ export function startGame() {
             // the last bar. Other wise the max height is the game height minus
             // the gap.
             lastTopBarHeight && currentDeviationCooldown
-              ? Math.min(height() - gap, lastTopBarHeight + DEVIATION)
-              : height() - gap
+              ? Math.min(k.height() - gap, lastTopBarHeight + DEVIATION)
+              : k.height() - gap
           );
 
           // set the bottom bar height to the remaining space after the top bar
           // height and gap.
-          const bottomBarHeight = height() - topBarHeight - gap;
+          const bottomBarHeight = k.height() - topBarHeight - gap;
 
           // if the next gap is lower than the last or this is the first gap and
           // it's closer to the bottom than the top, then consider this trade a
           // long.
           const isLong =
             topBarHeight > lastTopBarHeight ||
-            (!lastTopBarHeight && topBarHeight > height() / 2 - gap / 2);
+            (!lastTopBarHeight && topBarHeight > k.height() / 2 - gap / 2);
 
           // Make the bars red for longs and green for shorts
           const barColor = isLong ? [255, 0, 0] : [0, 255, 0];
@@ -281,39 +336,39 @@ export function startGame() {
     });
 
     // Event callback handlers
-    onKeyPress("x", () => go("gameover"));
-    onKeyPress("space", () => player.jump(JUMP_FORCE));
-    onKeyPress("space", () => {
-      const feesText = add([
-        text("+Fees", {
+    k.onKeyPress("x", () => k.go("gameover"));
+    k.onKeyPress("space", () => player.jump(JUMP_FORCE));
+    k.onKeyPress("space", () => {
+      const feesText = k.add([
+        k.text("+Fees", {
           size: 24,
         }),
-        pos(width() - 100, 100),
+        k.pos(k.width() - 100, 100),
         origin("center"),
       ]);
       gameStorage.score = gameStorage.score + 10;
       updateStat("SCORE", gameStorage.score);
-      wait(0.5, () => {
-        destroy(feesText);
+      k.wait(0.5, () => {
+        k.destroy(feesText);
       });
     });
   });
 
-  scene("gameover", () => {
-    add([text("Game over!"), pos(width() / 2, 50), origin("center")]);
-    add([
-      text("Press R to restart", {
+  k.scene("gameover", () => {
+    k.add([k.text("Game over!"), k.pos(k.width() / 2, 50), origin("center")]);
+    k.add([
+      k.text("Press R to restart", {
         size: 20,
       }),
-      pos(width() / 2, 250),
+      k.pos(k.width() / 2, 250),
       origin("center"),
     ]);
 
     const statObjects = Object.values(stats);
 
     statObjects.forEach((stat, i) => {
-      readd(stat);
-      stat.pos.x = width() / 2;
+      k.readd(stat);
+      stat.pos.x = k.width() / 2;
       stat.pos.y = 270 + 20 * (i + 1);
       stat.origin = "center";
     });
@@ -323,25 +378,25 @@ export function startGame() {
       localStorage.highScore = gameStorage.score;
     }
 
-    add([
-      text(`HIGH SCORE: ${localStorage.highScore}`, {
+    k.add([
+      k.text(`HIGH SCORE: ${localStorage.highScore}`, {
         size: 18,
       }),
-      pos(width() / 2, statObjects[statObjects.length - 1].pos.y + 40),
+      k.pos(k.width() / 2, statObjects[statObjects.length - 1].pos.y + 40),
       origin("center"),
     ]);
 
     // Event callback handlers
-    onKeyPress("r", () => {
+    k.onKeyPress("r", () => {
       gameStorage = new GameStorage();
       gameStorage.liquidity = MAX_LIQUIDITY;
       updateStat("SCORE", gameStorage.score);
       updateStat("LIQUIDITY", gameStorage.liquidity);
-      go("game");
+      k.go("game");
     });
   });
 
-  go("game");
+  k.go("start");
 
   focus();
 }
@@ -373,13 +428,13 @@ const generateGameEvent = () => {
 };
 
 // delete when out of screen
-function handleout() {
+function handleout(k: KaboomCtx) {
   return {
     id: "handleout",
     require: ["pos"],
     update() {
       const spos = this.screenPos();
-      if (spos.x > width() + 20 || spos.y < 0 || spos.y > height()) {
+      if (spos.x > k.width() + 20 || spos.y < 0 || spos.y > k.height()) {
         // triggers a custom event when out
         this.trigger("out");
       }
