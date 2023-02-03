@@ -1,4 +1,4 @@
-import kaboom, { GameObj, TextComp, KaboomCtx } from "kaboom";
+import kaboom, { GameObj, TextComp, KaboomCtx, Color } from "kaboom";
 import { PatchedBodyCompOpt } from "./@types";
 import { GameStorage, MAX_LIQUIDITY, MIN_LIQUIDITY } from "./GameStorage";
 import { commify, gcd, getRandomInt, randNum, scale } from "./utils";
@@ -80,11 +80,12 @@ export function startGame() {
   let gameStorage = new GameStorage();
 
   // // Load fonts
-  // k.loadFont("MarioKartDS", "/Mario-Kart-DS.ttf");
-  // type Fonts = "MarioKartDS";
+  k.loadFont("M23", "/m23.TTF");
+  k.loadFont("HardDrive", "/hard-drive.ttf");
 
   // Load sprites
   k.loadSprite("bird", "/bird.png");
+  k.loadSprite("ryanGosling", "./ryan_gosling_drive_movie_ascii_art.png");
 
   // Stats
   type Stat = "LIQUIDITY" | "SCORE" | "VOLUME" | "LONGS" | "SHORTS" | "PNL";
@@ -144,43 +145,47 @@ export function startGame() {
   }
 
   k.scene("start", () => {
-    k.add([
-      k.text("HYPERS - DRIVE"),
-      k.pos(k.width() / 2, 50),
+    // k.setBackground(Color.fromHex("#000"));
+    const title = k.add([
+      k.text("HYPERS DRIVE", {
+        font: "M23",
+        size: 96,
+      }),
+      k.pos(k.width() / 2, 200),
       origin("center"),
     ]);
-    k.add([
-      k.text("Press R to restart", {
+
+    const subTitle = title.add([
+      k.text("Can you handle the quantum leap anon", {
+        font: "HardDrive",
+        size: 42,
+      }),
+      k.pos(0, 100),
+      origin("center"),
+    ]);
+
+    subTitle.add([
+      k.text("Press ENTER to start the game...", {
+        font: "M23",
         size: 20,
       }),
-      k.pos(k.width() / 2, 250),
+      k.pos(0, 100),
       origin("center"),
     ]);
 
-    // const statObjects = Object.values(stats);
-
-    // statObjects.forEach((stat, i) => {
-    //   readd(stat);
-    //   stat.pos.x = width() / 2;
-    //   stat.pos.y = 270 + 20 * (i + 1);
-    //   stat.origin = "center";
-    // });
-
-    // const highScore = localStorage.highScore || 0;
-    // if (gameStorage.score > highScore) {
-    //   localStorage.highScore = gameStorage.score;
-    // }
-
-    // add([
-    //   text(`HIGH SCORE: ${localStorage.highScore}`, {
-    //     size: 18,
-    //   }),
-    //   pos(width() / 2, statObjects[statObjects.length - 1].pos.y + 40),
-    //   origin("center"),
-    // ]);
+    k.add([
+      k.sprite("ryanGosling"),
+      k.scale(0.5, 0.5),
+      k.pos(k.width() / 2, k.height() / 2 + 100),
+      origin("center"),
+      k.area(),
+      k.body({
+        isStatic: true,
+      } as PatchedBodyCompOpt),
+    ]);
 
     // Event callback handlers
-    k.onKeyPress("space", () => {
+    k.onKeyPress("enter", () => {
       gameStorage = new GameStorage();
       gameStorage.liquidity = MAX_LIQUIDITY;
       updateStat("SCORE", gameStorage.score);
