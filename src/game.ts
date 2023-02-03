@@ -1,19 +1,25 @@
 import kaboom from "kaboom";
+import { GameStorage } from "./GameStorage";
+import { getRandomInt, randNum, scale } from "./utils";
 
 export function startGame() {
-  // Start a kaboom game
+  // Start game setup
   const k = kaboom({
     background: [20, 20, 20],
   });
   const origin = k.origin;
 
+  // Load classes
+  const gameStorage = new GameStorage();
+
+  // Load sprites
   k.loadSprite("bird", "/bird.png");
 
   // Components
   function Bar(position: "top" | "bottom", barHeight: number) {
     const bar = add([
       "obstacle",
-      rect(30, barHeight),
+      rect(100, barHeight),
       area(),
       origin(position === "top" ? "top" : "bot"),
       pos(width(), position === "top" ? 0 : height()),
@@ -26,19 +32,38 @@ export function startGame() {
     });
   }
 
-  function randNum(min, max) {
-    // min and max included
-    return Math.floor(Math.random() * (max - min + 1) + min);
+  function Scorecard() {
+    const scoreBody = add([
+      rect(300, 200),
+      pos(width() - 250, 0),
+      fixed(),
+      z(10),
+    ]);
+    const scoreHeader = add([
+      text("Score", {
+        size: 48,
+      }),
+      pos(scoreBody.pos.x, scoreBody.pos.y),
+      fixed(),
+      z(10),
+    ]);
+    const scoreText = add([
+      text("0", {
+        size: 36,
+      }),
+      pos(scoreBody.pos.x, scoreBody.pos.y + 50),
+      fixed(),
+      z(10),
+    ]);
+
+    return {
+      scoreBody,
+      scoreHeader,
+      scoreText,
+    };
   }
 
-  let liquidity = 100_000;
-  const gap = 300;
-  let chance = 0.75;
-
-  // function Short() {
-  //   const short = Bar("bottom", amount / liquidity);
-  // }
-
+  // Scenes
   scene("game", () => {
     const bottom = add([
       "bottom",
@@ -65,14 +90,69 @@ export function startGame() {
       go("gameover");
     });
 
-    loop(2, () => {
-      const hasEvent = Math.random() < chance;
-      if (hasEvent) {
-        Bar(Math.random() > 0.5 ? "top" : "bottom", randNum(100, height() / 2));
+    const GameEvents = [
+      "ADD_SHORT",
+      "ADD_LONG",
+      "ADD_LIQUIDITY",
+      "REMOVE_LIQUIDITY",
+    ] as const;
+
+    const generateGameEvent = () => {
+      const seed = getRandomInt(GameEvents.length);
+      const event = GameEvents[seed];
+      if (event) {
+        console.log(event);
+        return event;
+      } else {
+        console.log(" no event");
+      }
+    };
+
+    const { scoreText } = Scorecard();
+
+    loop(1, () => {
+      const event = generateGameEvent();
+      const newAmount = randNum(100, gameStorage.liquidity);
+      const barHeight = scale(
+        newAmount,
+        100,
+        gameStorage.liquidity,
+        0,
+        height() / 2
+      );
+
+      switch (event) {
+        case "ADD_LONG":
+          Bar("top", barHeight);
+          return;
+        case "ADD_SHORT":
+          Bar("bottom", barHeight);
+          return;
+        case "ADD_LIQUIDITY":
+          gameStorage.addLiquidity(newAmount);
+          return;
+        case "REMOVE_LIQUIDITY":
+          gameStorage.removeLiquidity(newAmount);
       }
     });
 
+    // Event callback handlers
     onKeyPress("space", () => player.jump(400));
+    onKeyPress("space", () => {
+      const feesText = add([
+        text("+Fees", {
+          size: 24,
+        }),
+        pos(width() - 100, 100),
+        k.origin("center"),
+      ]);
+
+      gameStorage.score = gameStorage.score + 10;
+      scoreText.text = gameStorage.score.toString();
+      wait(0.5, () => {
+        destroy(feesText);
+      });
+    });
   });
 
   scene("gameover", () => {
@@ -85,6 +165,7 @@ export function startGame() {
       k.origin("center"),
     ]);
 
+    // Event callback handlers
     onKeyPress("space", () => {
       go("game");
     });
