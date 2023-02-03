@@ -3,15 +3,17 @@ export const MAX_LIQUIDITY = 200_000;
 
 export class GameStorage {
   public liquidity: number;
-  public shortsValue: number;
-  public longsValue: number;
+  public shortsVolume: number;
+  public longsVolume: number;
+  public totalVolume: number;
 
   public score: number = 0;
 
   constructor() {
     this.liquidity = 100_000;
-    this.shortsValue = 0;
-    this.longsValue = 0;
+    this.shortsVolume = 0;
+    this.longsVolume = 0;
+    this.totalVolume = 0;
   }
 
   public addLiquidity(amount: number) {
@@ -30,5 +32,15 @@ export class GameStorage {
     } else {
       this.liquidity = this.liquidity - amount;
     }
+  }
+
+  public addShort(amount: number) {
+    this.shortsVolume += amount;
+    this.totalVolume += amount;
+  }
+
+  public addLong(amount: number) {
+    this.longsVolume += amount;
+    this.totalVolume += amount;
   }
 }

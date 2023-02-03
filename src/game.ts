@@ -1,6 +1,6 @@
 import kaboom, { GameObj, TextComp } from "kaboom";
 import { GameStorage, MAX_LIQUIDITY, MIN_LIQUIDITY } from "./GameStorage";
-import { gcd, getRandomInt, randNum, scale } from "./utils";
+import { commify, gcd, getRandomInt, randNum, scale } from "./utils";
 
 // settings
 
@@ -79,12 +79,17 @@ export function startGame() {
   let gameStorage = new GameStorage();
 
   // Load sprites
-  k.loadSprite("bird", "/bird.png");
+  loadSprite("bird", "/bird.png");
 
-  // Stats along when their game object
+  // Stats
+  type Stat = "LIQUIDITY" | "SCORE" | "VOLUME" | "LONGS" | "SHORTS" | "PNL";
+
   let stats: Record<Stat, GameObj> = {} as Record<Stat, GameObj>;
+
   function updateStat(stat: Stat, value: string | number) {
-    stats[stat].text = `${stat}: ${value}`;
+    stats[stat].text = `${stat}: ${
+      typeof value === "number" ? commify(value) : value
+    }`;
   }
 
   // Components
@@ -96,9 +101,12 @@ export function startGame() {
     >;
     stats.forEach(([label, value], i) => {
       statsByLabel[label] = add([
-        text(`${label}: ${value}`, {
-          size: 18,
-        }),
+        text(
+          `${label}: ${typeof value === "number" ? commify(value) : value}`,
+          {
+            size: 18,
+          }
+        ),
         pos(20, 20 * (i + 1)),
         origin("topleft"),
         z(10),
@@ -117,7 +125,7 @@ export function startGame() {
       solid(),
       rect(100, barHeight),
       area(),
-      origin(position === "top" ? "top" : "bot"),
+      origin(position === "top" ? "topleft" : "botleft"),
       pos(width(), position === "top" ? 0 : height()),
       color(...(barColor as [number, number, number])),
       handleout(),
@@ -177,41 +185,11 @@ export function startGame() {
       go("gameover");
     });
 
-    const greatestCommonDivisor = gcd(
-      ADD_TRADE_CHANCE,
-      ADD_LIQUIDITY_CHANCE,
-      REMOVE_LIQUIDITY_CHANCE
-    );
-
-    // Create a list of events where the count of each event is even to the
-    // events' chances.
-    const GameEvents = [
-      ...Array(ADD_TRADE_CHANCE / greatestCommonDivisor).fill("ADD_TRADE"),
-      ...Array(ADD_LIQUIDITY_CHANCE / greatestCommonDivisor).fill(
-        "ADD_LIQUIDITY"
-      ),
-      ...Array(REMOVE_LIQUIDITY_CHANCE / greatestCommonDivisor).fill(
-        "REMOVE_LIQUIDITY"
-      ),
-    ] as const;
-
-    const generateGameEvent = () => {
-      const hasEvent = Math.random() < EVENT_CHANCE / 100;
-      if (!hasEvent) {
-        console.log("NO EVENT");
-        return;
-      }
-
-      const seed = getRandomInt(GameEvents.length);
-      const event = GameEvents[seed];
-      if (event) {
-        console.log(event);
-        return event;
-      }
-    };
-
     stats = Stats([
-      ["TOTAL LIQUIDITY", gameStorage.liquidity],
+      ["LIQUIDITY", gameStorage.liquidity],
+      ["LONGS", gameStorage.longsVolume],
+      ["SHORTS", gameStorage.shortsVolume],
+      ["VOLUME", gameStorage.totalVolume],
       ["SCORE", gameStorage.score],
     ]);
 
@@ -220,7 +198,7 @@ export function startGame() {
 
     loop(TIC_RATE, () => {
       const event = generateGameEvent();
-      const newAmount = randNum(100, gameStorage.liquidity);
+      const eventAmount = randNum(100, gameStorage.liquidity);
 
       switch (event) {
         case "ADD_TRADE":
@@ -233,7 +211,11 @@ export function startGame() {
           );
 
           // decide the top bar height
-          const topBarHeight = randNum(
+          const topBarHeight = scale(
+            eventAmount,
+            100,
+            gameStorage.liquidity,
+
             // if this isn't the first bar and the cooldown hasn't ended, then
             // make sure the bar is at least tall enough to not deviate too far
             // from the last bar. Otherwise the min height is 0.
@@ -250,45 +232,56 @@ export function startGame() {
               : height() - gap
           );
 
-          // set the bar color to green by default
-          let barColor = [0, 255, 0];
-
-          // if the next gap is lower than the last or this is the first gap and
-          // it's closer to the bottom than the top, then set the color to red.
-          if (
-            topBarHeight > lastTopBarHeight ||
-            (!lastTopBarHeight && topBarHeight > height() / 2 - gap / 2)
-          ) {
-            barColor = [255, 0, 0];
-          }
-
-          // reset the lastTopBarHeight
-          lastTopBarHeight = topBarHeight;
-
           // set the bottom bar height to the remaining space after the top bar
           // height and gap.
           const bottomBarHeight = height() - topBarHeight - gap;
 
+          // if the next gap is lower than the last or this is the first gap and
+          // it's closer to the bottom than the top, then consider this trade a
+          // long.
+          const isLong =
+            topBarHeight > lastTopBarHeight ||
+            (!lastTopBarHeight && topBarHeight > height() / 2 - gap / 2);
+
+          // Make the bars red for longs and green for shorts
+          const barColor = isLong ? [255, 0, 0] : [0, 255, 0];
+
           // add the bars to the game
           Bar("top", topBarHeight, barColor);
           Bar("bottom", bottomBarHeight, barColor);
+
+          // update stats
+          if (isLong) {
+            gameStorage.addLong(eventAmount);
+            updateStat("LONGS", gameStorage.longsVolume);
+          } else {
+            gameStorage.addShort(eventAmount);
+            updateStat("SHORTS", gameStorage.shortsVolume);
+          }
+          updateStat("VOLUME", gameStorage.totalVolume);
+
+          // reset the lastTopBarHeight
+          lastTopBarHeight = topBarHeight;
 
           // reset the deviation cooldown
           currentDeviationCooldown = DEVIATION_COOLDOWN;
           return;
 
         case "ADD_LIQUIDITY":
-          gameStorage.addLiquidity(newAmount);
+          gameStorage.addLiquidity(eventAmount);
+          updateStat("LIQUIDITY", gameStorage.liquidity);
           currentDeviationCooldown = Math.max(0, currentDeviationCooldown - 1);
           return;
 
         case "REMOVE_LIQUIDITY":
+          gameStorage.removeLiquidity(eventAmount);
+          updateStat("LIQUIDITY", gameStorage.liquidity);
           currentDeviationCooldown = Math.max(0, currentDeviationCooldown - 1);
-          gameStorage.removeLiquidity(newAmount);
       }
     });
 
     // Event callback handlers
+    onKeyPress("x", () => go("gameover"));
     onKeyPress("space", () => player.jump(JUMP_FORCE));
     onKeyPress("space", () => {
       const feesText = add([
@@ -296,11 +289,10 @@ export function startGame() {
           size: 24,
         }),
         pos(width() - 100, 100),
-        k.origin("center"),
+        origin("center"),
       ]);
       gameStorage.score = gameStorage.score + 10;
       updateStat("SCORE", gameStorage.score);
-      updateStat("TOTAL LIQUIDITY", gameStorage.liquidity);
       wait(0.5, () => {
         destroy(feesText);
       });
@@ -308,13 +300,13 @@ export function startGame() {
   });
 
   scene("gameover", () => {
-    add([text("Game over!"), pos(width() / 2, 50), k.origin("center")]);
+    add([text("Game over!"), pos(width() / 2, 50), origin("center")]);
     add([
-      text("Press space to restart", {
+      text("Press R to restart", {
         size: 20,
       }),
       pos(width() / 2, 250),
-      k.origin("center"),
+      origin("center"),
     ]);
 
     Object.values(stats).forEach((stat, i) => {
@@ -325,10 +317,11 @@ export function startGame() {
     });
 
     // Event callback handlers
-    onKeyPress("space", () => {
+    onKeyPress("r", () => {
       gameStorage = new GameStorage();
+      gameStorage.liquidity = MAX_LIQUIDITY;
       updateStat("SCORE", gameStorage.score);
-      updateStat("TOTAL LIQUIDITY", gameStorage.liquidity);
+      updateStat("LIQUIDITY", gameStorage.liquidity);
       go("game");
     });
   });
@@ -338,7 +331,31 @@ export function startGame() {
   focus();
 }
 
-type Stat = "TOTAL LIQUIDITY" | "SCORE" | "VOLUME" | "LONGS" | "SHORTS" | "PNL";
+const eventGCD = gcd(
+  ADD_TRADE_CHANCE,
+  ADD_LIQUIDITY_CHANCE,
+  REMOVE_LIQUIDITY_CHANCE
+);
+
+// Create a list of events where the count of each event is even to the events'
+// chances.
+const GameEvents = [
+  ...Array(ADD_TRADE_CHANCE / eventGCD).fill("ADD_TRADE"),
+  ...Array(ADD_LIQUIDITY_CHANCE / eventGCD).fill("ADD_LIQUIDITY"),
+  ...Array(REMOVE_LIQUIDITY_CHANCE / eventGCD).fill("REMOVE_LIQUIDITY"),
+] as const;
+
+const generateGameEvent = () => {
+  const hasEvent = Math.random() < EVENT_CHANCE / 100;
+  if (!hasEvent) {
+    console.log("NO EVENT");
+    return;
+  }
+  const seed = getRandomInt(GameEvents.length);
+  const event = GameEvents[seed];
+  console.log(event);
+  return event;
+};
 
 // delete when out of screen
 function handleout() {

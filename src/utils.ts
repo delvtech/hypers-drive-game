@@ -30,7 +30,14 @@ export function gcd(...numbers: number[]) {
       x = y % x;
       y = t;
     }
-    final = y
+    final = y;
   }
   return final;
+}
+
+export function commify(number: number | string) {
+  const parts = number.toString().split(".");
+  return `${parts[0].replace(/(?<!^)(?=(\d{3})+$)/g, ",")}${
+    parts.length > 1 ? `.${parts[1]}` : ""
+  }`;
 }
