@@ -16,3 +16,21 @@ export function scale(
 export function getRandomInt(max: number) {
   return Math.floor(Math.random() * Math.floor(max));
 }
+
+/**
+ * Get the greatest common divisor of a list of numbers.
+ */
+export function gcd(...numbers: number[]) {
+  let final = Math.abs(numbers[0]);
+  for (let i = 1; i < numbers.length; i++) {
+    let x = final;
+    let y = Math.abs(numbers[i]);
+    while (x) {
+      var t = x;
+      x = y % x;
+      y = t;
+    }
+    final = y
+  }
+  return final;
+}

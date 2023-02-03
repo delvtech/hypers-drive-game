@@ -1,6 +1,23 @@
 import kaboom, { GameObj, TextComp } from "kaboom";
 import { GameStorage, MAX_LIQUIDITY, MIN_LIQUIDITY } from "./GameStorage";
-import { getRandomInt, randNum, scale } from "./utils";
+import { gcd, getRandomInt, randNum, scale } from "./utils";
+
+// settings
+
+/**
+ * How much the character jumps when the space bar is pressed.
+ */
+const JUMP_FORCE = 500;
+
+/**
+ * The velocity at which the character falls.
+ */
+const FALLING_VELOCITY = 400;
+
+/**
+ * The speed at which the bars move horizontally.
+ */
+const BAR_SPEED = 3;
 
 /**
  * The minimum amount of space between the top and bottom bar
@@ -24,6 +41,33 @@ const DEVIATION = 100;
  */
 const DEVIATION_COOLDOWN = 1;
 
+/**
+ * The number of seconds between events.
+ */
+const TIC_RATE = 1;
+
+/**
+ * The % chance of an event happening on each tic.
+ */
+const EVENT_CHANCE = 100;
+
+/**
+ * The % chance that each event has of being a trade (bars added).
+ */
+const ADD_TRADE_CHANCE = 50;
+
+/**
+ * The % chance that each event has of being added liquidity (gaps get bigger).
+ */
+const ADD_LIQUIDITY_CHANCE = 25;
+
+/**
+ * The % chance that each event has of being removed liquidity (gaps get smaller).
+ */
+const REMOVE_LIQUIDITY_CHANCE = 25;
+
+// game
+
 export function startGame() {
   // Start game setup
   const k = kaboom({
@@ -37,29 +81,13 @@ export function startGame() {
   // Load sprites
   k.loadSprite("bird", "/bird.png");
 
+  // Stats along when their game object
   let stats: Record<Stat, GameObj> = {} as Record<Stat, GameObj>;
+  function updateStat(stat: Stat, value: string | number) {
+    stats[stat].text = `${stat}: ${value}`;
+  }
 
   // Components
-  function Bar(
-    position: "top" | "bottom",
-    barHeight: number,
-    barColor: number[]
-  ) {
-    const bar = add([
-      "bar",
-      solid(),
-      rect(100, barHeight),
-      area(),
-      origin(position === "top" ? "top" : "bot"),
-      pos(width(), position === "top" ? 0 : height()),
-      color(...(barColor as [number, number, number])),
-      handleout(),
-    ]);
-
-    bar.onUpdate(() => {
-      bar.pos.x -= 3;
-    });
-  }
 
   function Stats(stats: [Stat, string | number][]): Record<Stat, GameObj> {
     const statsByLabel: Record<Stat, GameObj> = {} as Record<
@@ -79,36 +107,54 @@ export function startGame() {
     return statsByLabel;
   }
 
-  function updatedState(stat: Stat, value: string | number) {
-    stats[stat].text = `${stat}: ${value}`;
+  function Bar(
+    position: "top" | "bottom",
+    barHeight: number,
+    barColor: number[]
+  ) {
+    const bar = add([
+      "bar",
+      solid(),
+      rect(100, barHeight),
+      area(),
+      origin(position === "top" ? "top" : "bot"),
+      pos(width(), position === "top" ? 0 : height()),
+      color(...(barColor as [number, number, number])),
+      handleout(),
+    ]);
+
+    bar.onUpdate(() => {
+      bar.pos.x -= BAR_SPEED;
+    });
   }
 
   // Scenes
   scene("game", () => {
     // boundaries
-    const top = add([
+    add([
+      "top",
       "obstacle",
-      "bottom",
-      rect(width(), 1),
+      rect(width(), 4),
       pos(0, 0),
       origin("topleft"),
       area(),
       solid(),
+      color(255, 0, 0),
     ]);
-    const bottom = add([
-      "obstacle",
+    add([
       "bottom",
-      rect(width(), 1),
+      "obstacle",
+      rect(width(), 4),
       pos(0, height()),
       origin("botleft"),
       area(),
       solid(),
       color(255, 0, 0),
     ]);
-    const left = add([
-      "obstacle",
+    add([
       "left",
-      rect(0, height()),
+      "obstacle",
+      rect(4, height()),
       pos(0, 0),
       origin("topleft"),
       area(),
@@ -116,14 +162,13 @@ export function startGame() {
       color(255, 0, 0),
     ]);
 
-    // add() assembles a game object from a list of components and add to game, returns the reference of the game object
     const player = add([
       sprite("bird"),
       pos(width() / 3, 80),
       origin("center"),
       area(),
       body({
-        maxVel: 400,
+        maxVel: FALLING_VELOCITY,
       }),
     ]);
 
@@ -132,21 +177,30 @@ export function startGame() {
       go("gameover");
     });
 
+    const greatestCommonDivisor = gcd(
+      ADD_TRADE_CHANCE,
+      ADD_LIQUIDITY_CHANCE,
+      REMOVE_LIQUIDITY_CHANCE
+    );
+
+    // Create a list of events where the count of each event is even to the
+    // events' chances.
     const GameEvents = [
-      "ADD_TRADE",
-      "ADD_TRADE",
-      "ADD_LIQUIDITY",
-      "REMOVE_LIQUIDITY",
+      ...Array(ADD_TRADE_CHANCE / greatestCommonDivisor).fill("ADD_TRADE"),
+      ...Array(ADD_LIQUIDITY_CHANCE / greatestCommonDivisor).fill(
+        "ADD_LIQUIDITY"
+      ),
+      ...Array(REMOVE_LIQUIDITY_CHANCE / greatestCommonDivisor).fill(
+        "REMOVE_LIQUIDITY"
+      ),
     ] as const;
 
-    // let chance = 0.9;
-
     const generateGameEvent = () => {
-      // const hasEvent = Math.random() < chance;
-      // if (!hasEvent) {
-      //   console.log(" no event");
-      //   return;
-      // }
+      const hasEvent = Math.random() < EVENT_CHANCE / 100;
+      if (!hasEvent) {
+        console.log("NO EVENT");
+        return;
+      }
 
       const seed = getRandomInt(GameEvents.length);
       const event = GameEvents[seed];
@@ -164,7 +218,7 @@ export function startGame() {
     let lastTopBarHeight: number;
     let currentDeviationCooldown = DEVIATION_COOLDOWN;
 
-    loop(1, () => {
+    loop(TIC_RATE, () => {
       const event = generateGameEvent();
       const newAmount = randNum(100, gameStorage.liquidity);
 
@@ -174,8 +228,8 @@ export function startGame() {
             gameStorage.liquidity,
             MIN_LIQUIDITY,
             MAX_LIQUIDITY,
-            150,
-            400
+            MIN_GAP,
+            MAX_GAP
           );
 
           // decide the top bar height
@@ -235,7 +289,7 @@ export function startGame() {
     });
 
     // Event callback handlers
-    onKeyPress("space", () => player.jump(500));
+    onKeyPress("space", () => player.jump(JUMP_FORCE));
     onKeyPress("space", () => {
       const feesText = add([
         text("+Fees", {
@@ -245,8 +299,8 @@ export function startGame() {
         k.origin("center"),
       ]);
       gameStorage.score = gameStorage.score + 10;
-      updatedState("SCORE", gameStorage.score);
-      updatedState("TOTAL LIQUIDITY", gameStorage.liquidity);
+      updateStat("SCORE", gameStorage.score);
+      updateStat("TOTAL LIQUIDITY", gameStorage.liquidity);
       wait(0.5, () => {
         destroy(feesText);
       });
@@ -273,8 +327,8 @@ export function startGame() {
     // Event callback handlers
     onKeyPress("space", () => {
       gameStorage = new GameStorage();
-      updatedState("SCORE", gameStorage.score);
-      updatedState("TOTAL LIQUIDITY", gameStorage.liquidity);
+      updateStat("SCORE", gameStorage.score);
+      updateStat("TOTAL LIQUIDITY", gameStorage.liquidity);
       go("game");
     });
   });
