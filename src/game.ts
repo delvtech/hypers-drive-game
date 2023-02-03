@@ -74,7 +74,6 @@ export function startGame() {
   const k = kaboom({
     background: [20, 20, 20],
   });
-  const origin = k.anchor;
 
   // Load classes
   let gameStorage = new GameStorage();
@@ -116,7 +115,7 @@ export function startGame() {
           }
         ),
         k.pos(20, 20 * (i + 1)),
-        origin("topleft"),
+        k.anchor("topleft"),
         k.z(10),
       ]);
     });
@@ -133,7 +132,7 @@ export function startGame() {
       k.body({ isSolid: true, isStatic: true } as PatchedBodyCompOpt),
       k.rect(100, barHeight),
       k.area(),
-      origin(position === "top" ? "topleft" : "botleft"),
+      k.anchor(position === "top" ? "topleft" : "botleft"),
       k.pos(k.width(), position === "top" ? 0 : k.height()),
       k.color(...(barColor as [number, number, number])),
       handleout(k),
@@ -152,7 +151,7 @@ export function startGame() {
         size: 96,
       }),
       k.pos(k.width() / 2, 200),
-      origin("center"),
+      k.anchor("center"),
     ]);
 
     const subTitle = title.add([
@@ -161,7 +160,7 @@ export function startGame() {
         size: 42,
       }),
       k.pos(0, 100),
-      origin("center"),
+      k.anchor("center"),
     ]);
 
     subTitle.add([
@@ -170,14 +169,14 @@ export function startGame() {
         size: 20,
       }),
       k.pos(0, 100),
-      origin("center"),
+      k.anchor("center"),
     ]);
 
     k.add([
       k.sprite("ryanGosling"),
       k.scale(0.5, 0.5),
       k.pos(k.width() / 2, k.height() / 2 + 100),
-      origin("center"),
+      k.anchor("center"),
       k.area(),
       k.body({
         isStatic: true,
@@ -203,7 +202,7 @@ export function startGame() {
       "obstacle",
       k.rect(k.width(), 4),
       k.pos(0, 0),
-      origin("topleft"),
+      k.anchor("topleft"),
       k.area(),
       k.body({ isSolid: true, isStatic: true } as PatchedBodyCompOpt),
       k.color(255, 0, 0),
@@ -213,7 +212,7 @@ export function startGame() {
       "obstacle",
       k.rect(k.width(), 4),
       k.pos(0, k.height()),
-      origin("botleft"),
+      k.anchor("botleft"),
       k.area(),
       k.body({ isSolid: true, isStatic: true } as PatchedBodyCompOpt),
       k.color(255, 0, 0),
@@ -223,7 +222,7 @@ export function startGame() {
       "obstacle",
       k.rect(4, k.height()),
       k.pos(0, 0),
-      origin("topleft"),
+      k.anchor("topleft"),
       k.area(),
       k.body({ isSolid: true, isStatic: true } as PatchedBodyCompOpt),
       k.color(255, 0, 0),
@@ -232,7 +231,7 @@ export function startGame() {
     const player = k.add([
       k.sprite("bird"),
       k.pos(k.width() / 3, 80),
-      origin("center"),
+      k.anchor("center"),
       k.area(),
       k.body({
         // @ts-ignore
@@ -349,7 +348,7 @@ export function startGame() {
           size: 24,
         }),
         k.pos(k.width() - 100, 100),
-        origin("center"),
+        k.anchor("center"),
       ]);
       gameStorage.score = gameStorage.score + 10;
       updateStat("SCORE", gameStorage.score);
@@ -360,13 +359,13 @@ export function startGame() {
   });
 
   k.scene("gameover", () => {
-    k.add([k.text("Game over!"), k.pos(k.width() / 2, 50), origin("center")]);
+    k.add([k.text("Game over!"), k.pos(k.width() / 2, 50), k.anchor("center")]);
     k.add([
       k.text("Press R to restart", {
         size: 20,
       }),
       k.pos(k.width() / 2, 250),
-      origin("center"),
+      k.anchor("center"),
     ]);
 
     const statObjects = Object.values(stats);
@@ -375,7 +374,7 @@ export function startGame() {
       k.readd(stat);
       stat.pos.x = k.width() / 2;
       stat.pos.y = 270 + 20 * (i + 1);
-      stat.origin = "center";
+      stat.anchor = "center";
     });
 
     const highScore = localStorage.highScore || 0;
@@ -388,7 +387,7 @@ export function startGame() {
         size: 18,
       }),
       k.pos(k.width() / 2, statObjects[statObjects.length - 1].pos.y + 40),
-      origin("center"),
+      k.anchor("center"),
     ]);
 
     // Event callback handlers
