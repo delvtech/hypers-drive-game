@@ -2,8 +2,27 @@ import kaboom, { GameObj, TextComp } from "kaboom";
 import { GameStorage, MAX_LIQUIDITY, MIN_LIQUIDITY } from "./GameStorage";
 import { getRandomInt, randNum, scale } from "./utils";
 
-const BASE_GAP = 200;
+/**
+ * The minimum amount of space between the top and bottom bar
+ */
+const MIN_GAP = 150;
+
+/**
+ * The max amount of space between the top and bottom bar
+ */
+const MAX_GAP = 400;
+
+/**
+ * The max distance a gap can be from the gap before it.
+ */
 const DEVIATION = 100;
+
+/**
+ * The amount of ticks without new bars that the DEVIATION should be respected.
+ * When this number of ticks have passed with no bars, the next gap can be
+ * placed at any position, then the cooldown resets.
+ */
+const DEVIATION_COOLDOWN = 1;
 
 export function startGame() {
   // Start game setup
@@ -142,8 +161,8 @@ export function startGame() {
       ["SCORE", gameStorage.score],
     ]);
 
-    let lastTopBar: number;
-    let deviationCooldown = 3;
+    let lastTopBarHeight: number;
+    let currentDeviationCooldown = DEVIATION_COOLDOWN;
 
     loop(1, () => {
       const event = generateGameEvent();
@@ -158,29 +177,59 @@ export function startGame() {
             150,
             400
           );
+
+          // decide the top bar height
           const topBarHeight = randNum(
-            0,
-            lastTopBar && deviationCooldown
-              ? Math.min(height() - gap, lastTopBar + DEVIATION)
+            // if this isn't the first bar and the cooldown hasn't ended, then
+            // make sure the bar is at least tall enough to not deviate too far
+            // from the last bar. Otherwise the min height is 0.
+            lastTopBarHeight && currentDeviationCooldown
+              ? Math.max(0, lastTopBarHeight - DEVIATION)
+              : 0,
+
+            // if this isn't the first bar and the cooldown hasn't ended, then
+            // make sure the bar is not so tall that it deviates too far from
+            // the last bar. Other wise the max height is the game height minus
+            // the gap.
+            lastTopBarHeight && currentDeviationCooldown
+              ? Math.min(height() - gap, lastTopBarHeight + DEVIATION)
               : height() - gap
           );
-          let color = [0, 255, 0];
+
+          // set the bar color to green by default
+          let barColor = [0, 255, 0];
+
+          // if the next gap is lower than the last or this is the first gap and
+          // it's closer to the bottom than the top, then set the color to red.
           if (
-            topBarHeight > lastTopBar ||
-            (!lastTopBar && topBarHeight > height() / 2 - gap / 2)
+            topBarHeight > lastTopBarHeight ||
+            (!lastTopBarHeight && topBarHeight > height() / 2 - gap / 2)
           ) {
-            color = [255, 0, 0];
+            barColor = [255, 0, 0];
           }
-          lastTopBar = topBarHeight;
+
+          // reset the lastTopBarHeight
+          lastTopBarHeight = topBarHeight;
+
+          // set the bottom bar height to the remaining space after the top bar
+          // height and gap.
           const bottomBarHeight = height() - topBarHeight - gap;
-          Bar("top", topBarHeight, color);
-          Bar("bottom", bottomBarHeight, color);
-          deviationCooldown = Math.min(0, deviationCooldown--);
+
+          // add the bars to the game
+          Bar("top", topBarHeight, barColor);
+          Bar("bottom", bottomBarHeight, barColor);
+
+          // reset the deviation cooldown
+          currentDeviationCooldown = DEVIATION_COOLDOWN;
           return;
+
         case "ADD_LIQUIDITY":
           gameStorage.addLiquidity(newAmount);
+          currentDeviationCooldown = Math.max(0, currentDeviationCooldown - 1);
           return;
+
         case "REMOVE_LIQUIDITY":
+          currentDeviationCooldown = Math.max(0, currentDeviationCooldown - 1);
           gameStorage.removeLiquidity(newAmount);
       }
     });
