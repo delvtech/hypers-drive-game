@@ -309,12 +309,27 @@ export function startGame() {
       origin("center"),
     ]);
 
-    Object.values(stats).forEach((stat, i) => {
+    const statObjects = Object.values(stats);
+
+    statObjects.forEach((stat, i) => {
       readd(stat);
       stat.pos.x = width() / 2;
       stat.pos.y = 270 + 20 * (i + 1);
       stat.origin = "center";
     });
+
+    const highScore = localStorage.highScore || 0;
+    if (gameStorage.score > highScore) {
+      localStorage.highScore = gameStorage.score;
+    }
+
+    add([
+      text(`HIGH SCORE: ${localStorage.highScore}`, {
+        size: 18,
+      }),
+      pos(width() / 2, statObjects[statObjects.length - 1].pos.y + 40),
+      origin("center"),
+    ]);
 
     // Event callback handlers
     onKeyPress("r", () => {
