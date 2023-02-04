@@ -7,7 +7,6 @@ import { Settings } from "../settings";
 export type TradeType = "SHORT" | "LONG";
 
 export class Trades {
-  // private game: Game;
   private k: KaboomCtx;
   private storage: GameStorage;
   private settings: Settings;
