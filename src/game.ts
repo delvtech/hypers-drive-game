@@ -143,6 +143,62 @@ export function startGame() {
     });
   }
 
+  type TradeType = "SHORT" | "LONG";
+
+  const Trade = (() => {
+    // the y position of the last gap's center
+    let gapYPos = k.height() / 2;
+
+    return function (amount: number, deviation?: number, type?: TradeType) {
+
+      // derive a gap width from liquidity
+      const gap = scale(
+        gameStorage.liquidity,
+        MIN_LIQUIDITY,
+        MAX_LIQUIDITY,
+        MIN_GAP,
+        MAX_GAP
+      );
+
+      // derive a gap movement from the amount
+      const gapYPosMovement = scale(
+        amount,
+        0,
+        gameStorage.liquidity,
+        0,
+        deviation ?? k.height() - gap
+      );
+
+      const tradeType: TradeType =
+        type || Math.random() < 0.5 ? "SHORT" : "LONG";
+
+      if (tradeType === "LONG") {
+        gapYPos = Math.min(k.height() - gap / 2, gapYPos + gapYPosMovement);
+      } else {
+        gapYPos = Math.max(gap / 2, gapYPos - gapYPosMovement);
+      }
+
+      const topBarHeight = Math.max(0, gapYPos - gap / 2);
+
+      // Make the bars red for longs and green for shorts
+      const barColor = tradeType === "LONG" ? [255, 0, 0] : [0, 255, 0];
+
+      // add the bars to the game
+      Bar("top", topBarHeight, barColor);
+      Bar("bottom", Math.max(0, k.height() - topBarHeight - gap), barColor);
+
+      // update stats
+      if (tradeType === "LONG") {
+        gameStorage.addLong(amount);
+        updateStat("LONGS", gameStorage.longsVolume);
+      } else {
+        gameStorage.addShort(amount);
+        updateStat("SHORTS", gameStorage.shortsVolume);
+      }
+      updateStat("VOLUME", gameStorage.totalVolume);
+    };
+  })();
+
   k.scene("start", () => {
     // k.setBackground(Color.fromHex("#000"));
     const title = k.add([
@@ -187,9 +243,12 @@ export function startGame() {
     k.onKeyPress("enter", () => {
       gameStorage = new GameStorage();
       gameStorage.liquidity = MAX_LIQUIDITY;
-      updateStat("SCORE", gameStorage.score);
-      updateStat("LIQUIDITY", gameStorage.liquidity);
-      k.go("game");
+      updateStat("LIQUIDITY", gameStorage.liquidity),
+        updateStat("LONGS", gameStorage.longsVolume),
+        updateStat("SHORTS", gameStorage.shortsVolume),
+        updateStat("VOLUME", gameStorage.totalVolume),
+        updateStat("SCORE", gameStorage.score),
+        k.go("game");
     });
   });
 
@@ -252,7 +311,6 @@ export function startGame() {
       ["SCORE", gameStorage.score],
     ]);
 
-    let lastTopBarHeight: number;
     let currentDeviationCooldown = DEVIATION_COOLDOWN;
 
     k.loop(TIC_RATE, () => {
@@ -261,66 +319,7 @@ export function startGame() {
 
       switch (event) {
         case "ADD_TRADE":
-          const gap = scale(
-            gameStorage.liquidity,
-            MIN_LIQUIDITY,
-            MAX_LIQUIDITY,
-            MIN_GAP,
-            MAX_GAP
-          );
-
-          // decide the top bar height
-          const topBarHeight = scale(
-            eventAmount,
-            100,
-            gameStorage.liquidity,
-
-            // if this isn't the first bar and the cooldown hasn't ended, then
-            // make sure the bar is at least tall enough to not deviate too far
-            // from the last bar. Otherwise the min height is 0.
-            lastTopBarHeight && currentDeviationCooldown
-              ? Math.max(0, lastTopBarHeight - DEVIATION)
-              : 0,
-
-            // if this isn't the first bar and the cooldown hasn't ended, then
-            // make sure the bar is not so tall that it deviates too far from
-            // the last bar. Other wise the max height is the game height minus
-            // the gap.
-            lastTopBarHeight && currentDeviationCooldown
-              ? Math.min(k.height() - gap, lastTopBarHeight + DEVIATION)
-              : k.height() - gap
-          );
-
-          // set the bottom bar height to the remaining space after the top bar
-          // height and gap.
-          const bottomBarHeight = k.height() - topBarHeight - gap;
-
-          // if the next gap is lower than the last or this is the first gap and
-          // it's closer to the bottom than the top, then consider this trade a
-          // long.
-          const isLong =
-            topBarHeight > lastTopBarHeight ||
-            (!lastTopBarHeight && topBarHeight > k.height() / 2 - gap / 2);
-
-          // Make the bars red for longs and green for shorts
-          const barColor = isLong ? [255, 0, 0] : [0, 255, 0];
-
-          // add the bars to the game
-          Bar("top", topBarHeight, barColor);
-          Bar("bottom", bottomBarHeight, barColor);
-
-          // update stats
-          if (isLong) {
-            gameStorage.addLong(eventAmount);
-            updateStat("LONGS", gameStorage.longsVolume);
-          } else {
-            gameStorage.addShort(eventAmount);
-            updateStat("SHORTS", gameStorage.shortsVolume);
-          }
-          updateStat("VOLUME", gameStorage.totalVolume);
-
-          // reset the lastTopBarHeight
-          lastTopBarHeight = topBarHeight;
+          Trade(eventAmount, currentDeviationCooldown ? DEVIATION : undefined);
 
           // reset the deviation cooldown
           currentDeviationCooldown = DEVIATION_COOLDOWN;
@@ -371,7 +370,7 @@ export function startGame() {
     const statObjects = Object.values(stats);
 
     statObjects.forEach((stat, i) => {
-      k.readd(stat);
+      k.add(stat);
       stat.pos.x = k.width() / 2;
       stat.pos.y = 270 + 20 * (i + 1);
       stat.anchor = "center";
