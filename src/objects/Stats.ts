@@ -87,7 +87,7 @@ export class Stats<S extends string = string> {
 
   public bottomY() {
     const lastObject = this.objects[this.objects.length - 1];
-    return this.container.pos.y + lastObject.pos.y + lastObject.height / 2;
+    return this.container.pos.y + lastObject.pos.y + lastObject.height;
   }
 }
 

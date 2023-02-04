@@ -53,7 +53,7 @@ export class EventFeed {
       k.anchor("botleft"),
     ]);
 
-    // automatically destroy the event after 5 seconds.
+    // automatically destroy the event after ttl.
     k.wait(this.ttl, () => event.destroy());
   }
 
