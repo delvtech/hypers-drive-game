@@ -1,83 +1,72 @@
-import kaboom, { GameObj, TextComp, KaboomCtx, Color } from "kaboom";
+import kaboom, { TweenController } from "kaboom";
 import { PatchedBodyCompOpt } from "./@types";
-import { GameStorage, MAX_LIQUIDITY, MIN_LIQUIDITY } from "./GameStorage";
-import { commify, gcd, getRandomInt, randNum, scale } from "./utils";
-
-// settings
-
-/**
- * How much the character jumps when the space bar is pressed.
- */
-const JUMP_FORCE = 500;
-
-/**
- * The velocity at which the character falls.
- */
-const FALLING_VELOCITY = 400;
+import { GameStorage } from "./GameStorage";
+import { commify, randNum, scale } from "./utils";
+import { Settings } from "./settings";
+import { Stats } from "./objects/Stats";
+import { Events } from "./Events";
+import { EventFeed } from "./objects/EventFeed";
+import { Trades } from "./objects/Trades";
+import BezierEasing from "bezier-easing";
 
 /**
- * The speed at which the bars move horizontally.
+ * Add default settings to a partial settings object
  */
-const BAR_SPEED = 3;
+function initSettings(settings?: Partial<Settings>): Settings {
+  return {
+    GRAVITY: 1750,
+    JUMP_FORCE: 600,
+    FALLING_VELOCITY: 600,
+    SPEED: 5,
+    FINAL_SPEED: 15,
+    TIME_TO_HYPERDRIVE: 20,
+    MIN_GAP: 150,
+    MAX_GAP: 400,
+    DEVIATION: 90,
+    DEVIATION_COOLDOWN: 1,
+    TIC_RATE: .8,
+    EVENT_CHANCE: 100,
+    ADD_TRADE_CHANCE: 50,
+    ADD_LIQUIDITY_CHANCE: 25,
+    REMOVE_LIQUIDITY_CHANCE: 25,
+    ...settings,
+  };
+}
 
-/**
- * The minimum amount of space between the top and bottom bar
- */
-const MIN_GAP = 150;
+const SPEED_OF_LIGHT = 671_000_000; // mph
+const WARP_SPEED = SPEED_OF_LIGHT * 2;
 
-/**
- * The max amount of space between the top and bottom bar
- */
-const MAX_GAP = 400;
-
-/**
- * The max distance a gap can be from the gap before it.
- */
-const DEVIATION = 100;
-
-/**
- * The amount of ticks without new bars that the DEVIATION should be respected.
- * When this number of ticks have passed with no bars, the next gap can be
- * placed at any position, then the cooldown resets.
- */
-const DEVIATION_COOLDOWN = 1;
-
-/**
- * The number of seconds between events.
- */
-const TIC_RATE = 1;
-
-/**
- * The % chance of an event happening on each tic.
- */
-const EVENT_CHANCE = 100;
-
-/**
- * The % chance that each event has of being a trade (bars added).
- */
-const ADD_TRADE_CHANCE = 50;
-
-/**
- * The % chance that each event has of being added liquidity (gaps get bigger).
- */
-const ADD_LIQUIDITY_CHANCE = 25;
-
-/**
- * The % chance that each event has of being removed liquidity (gaps get smaller).
- */
-const REMOVE_LIQUIDITY_CHANCE = 25;
-
-// game
-
-export function startGame() {
-  // Start game setup
+export function startGame(gameSettings?: Partial<Settings>) {
+  // Create kaboom instance
   const k = kaboom({
     background: [20, 20, 20],
   });
-  const origin = k.anchor;
 
-  // Load classes
-  let gameStorage = new GameStorage();
+  // Calculate once and reuse
+  const gameWidth = k.width();
+  const gameHeight = k.height();
+
+  // Add defaults to settings
+  const settings = initSettings(gameSettings);
+  const {
+    GRAVITY,
+    JUMP_FORCE,
+    FALLING_VELOCITY,
+    SPEED,
+    FINAL_SPEED,
+    TIME_TO_HYPERDRIVE,
+    DEVIATION,
+    DEVIATION_COOLDOWN,
+    TIC_RATE,
+  } = settings;
+
+  // Initiate helper classes
+  const storage = new GameStorage();
+  const events = new Events(settings);
+
+  // Initiate reusable object classes outside the scenes
+  const eventFeed = new EventFeed(k);
+  const trades = new Trades(k, storage, settings);
 
   // // Load fonts
   k.loadFont("M23", "/m23.TTF");
@@ -87,72 +76,19 @@ export function startGame() {
   k.loadSprite("bird", "/bird.png");
   k.loadSprite("ryanGosling", "./ryan_gosling_drive_movie_ascii_art.png");
 
-  // Stats
-  type Stat = "LIQUIDITY" | "SCORE" | "VOLUME" | "LONGS" | "SHORTS" | "PNL";
+  // Scenes
 
-  let stats: Record<Stat, GameObj> = {} as Record<Stat, GameObj>;
-
-  function updateStat(stat: Stat, value: string | number) {
-    if (stats[stat]) {
-      stats[stat].text = `${stat}: ${
-        typeof value === "number" ? commify(value) : value
-      }`;
-    }
-  }
-
-  // Components
-
-  function Stats(stats: [Stat, string | number][]): Record<Stat, GameObj> {
-    const statsByLabel: Record<Stat, GameObj> = {} as Record<
-      Stat,
-      GameObj<TextComp>
-    >;
-    stats.forEach(([label, value], i) => {
-      statsByLabel[label] = k.add([
-        k.text(
-          `${label}: ${typeof value === "number" ? commify(value) : value}`,
-          {
-            size: 18,
-          }
-        ),
-        k.pos(20, 20 * (i + 1)),
-        origin("topleft"),
-        k.z(10),
-      ]);
-    });
-    return statsByLabel;
-  }
-
-  function Bar(
-    position: "top" | "bottom",
-    barHeight: number,
-    barColor: number[]
-  ) {
-    const bar = k.add([
-      "bar",
-      k.body({ isSolid: true, isStatic: true } as PatchedBodyCompOpt),
-      k.rect(100, barHeight),
-      k.area(),
-      origin(position === "top" ? "topleft" : "botleft"),
-      k.pos(k.width(), position === "top" ? 0 : k.height()),
-      k.color(...(barColor as [number, number, number])),
-      handleout(k),
-    ]);
-
-    bar.onUpdate(() => {
-      bar.pos.x -= BAR_SPEED;
-    });
-  }
-
+  //////////////////////////////////////////////////////////////////////////////
+  // START
+  //////////////////////////////////////////////////////////////////////////////
   k.scene("start", () => {
-    // k.setBackground(Color.fromHex("#000"));
     const title = k.add([
       k.text("HYPERS DRIVE", {
         font: "M23",
         size: 96,
       }),
-      k.pos(k.width() / 2, 200),
-      origin("center"),
+      k.pos(gameWidth / 2, 200),
+      k.anchor("center"),
     ]);
 
     const subTitle = title.add([
@@ -161,7 +97,7 @@ export function startGame() {
         size: 42,
       }),
       k.pos(0, 100),
-      origin("center"),
+      k.anchor("center"),
     ]);
 
     subTitle.add([
@@ -170,14 +106,14 @@ export function startGame() {
         size: 20,
       }),
       k.pos(0, 100),
-      origin("center"),
+      k.anchor("center"),
     ]);
 
     k.add([
       k.sprite("ryanGosling"),
       k.scale(0.5, 0.5),
-      k.pos(k.width() / 2, k.height() / 2 + 100),
-      origin("center"),
+      k.pos(gameWidth / 2, gameHeight / 2 + 100),
+      k.anchor("center"),
       k.area(),
       k.body({
         isStatic: true,
@@ -186,24 +122,53 @@ export function startGame() {
 
     // Event callback handlers
     k.onKeyPress("enter", () => {
-      gameStorage = new GameStorage();
-      gameStorage.liquidity = MAX_LIQUIDITY;
-      updateStat("SCORE", gameStorage.score);
-      updateStat("LIQUIDITY", gameStorage.liquidity);
       k.go("game");
     });
   });
 
-  // Scenes
+  //////////////////////////////////////////////////////////////////////////////
+  // GAME
+  //////////////////////////////////////////////////////////////////////////////
   k.scene("game", () => {
-    k.setGravity(1750);
-    // boundaries
+    // Reset storage to default state
+    storage.reset();
+
+    // Establish gravity
+    k.setGravity(GRAVITY);
+
+    // Reset and add the event feed
+    k.add(eventFeed.container);
+    eventFeed.clear();
+
+    // Set a base player speed based on the SPEED setting. The player speed
+    // represents the speed at which the player is moving through space. At the
+    // base speed, only the background actually moves on the canvas.
+    const basePlayerSpeed = SPEED * 100_000; // mph
+
+    // Add a list of stats
+    const stats = new Stats(
+      k,
+      [
+        ["LIQUIDITY", storage.liquidity],
+        ["LONGS", storage.longsVolume],
+        ["SHORTS", storage.shortsVolume],
+        ["VOLUME", storage.totalVolume],
+        ["SCORE", storage.score],
+        ["SPEED", commify(basePlayerSpeed)],
+      ],
+      {
+        x: 20,
+        y: 20,
+      }
+    );
+
+    // Add boundaries. If the player hits a boundary, it's game over.
     k.add([
       "top",
       "obstacle",
-      k.rect(k.width(), 4),
+      k.rect(gameWidth, 4),
       k.pos(0, 0),
-      origin("topleft"),
+      k.anchor("topleft"),
       k.area(),
       k.body({ isSolid: true, isStatic: true } as PatchedBodyCompOpt),
       k.color(255, 0, 0),
@@ -211,9 +176,9 @@ export function startGame() {
     k.add([
       "bottom",
       "obstacle",
-      k.rect(k.width(), 4),
-      k.pos(0, k.height()),
-      origin("botleft"),
+      k.rect(gameWidth, 4),
+      k.pos(0, gameHeight),
+      k.anchor("botleft"),
       k.area(),
       k.body({ isSolid: true, isStatic: true } as PatchedBodyCompOpt),
       k.color(255, 0, 0),
@@ -221,18 +186,30 @@ export function startGame() {
     k.add([
       "left",
       "obstacle",
-      k.rect(4, k.height()),
+      k.rect(4, gameHeight),
       k.pos(0, 0),
-      origin("topleft"),
+      k.anchor("topleft"),
       k.area(),
       k.body({ isSolid: true, isStatic: true } as PatchedBodyCompOpt),
       k.color(255, 0, 0),
     ]);
 
+    // Add the blastoff point. When the player reaches the blastoff point, they
+    // engage hyperdrive and fly off screen at light speed.
+    const blastoff = k.add([
+      "blastoff",
+      k.rect(0, gameHeight),
+      k.pos(gameWidth - 50, 0),
+      k.anchor("topright"),
+      k.area(),
+    ]);
+
+    // Add the player and define it's starting x position
+    const startingPlayerX = gameWidth / 5;
     const player = k.add([
       k.sprite("bird"),
-      k.pos(k.width() / 3, 80),
-      origin("center"),
+      k.pos(startingPlayerX, 80),
+      k.anchor("center"),
       k.area(),
       k.body({
         // @ts-ignore
@@ -240,163 +217,242 @@ export function startGame() {
       }),
     ]);
 
-    player.onCollide("obstacle", () => {
-      k.destroy(player);
-      k.go("gameover");
-    });
-
-    stats = Stats([
-      ["LIQUIDITY", gameStorage.liquidity],
-      ["LONGS", gameStorage.longsVolume],
-      ["SHORTS", gameStorage.shortsVolume],
-      ["VOLUME", gameStorage.totalVolume],
-      ["SCORE", gameStorage.score],
-    ]);
-
-    let lastTopBarHeight: number;
-    let currentDeviationCooldown = DEVIATION_COOLDOWN;
-
-    k.loop(TIC_RATE, () => {
-      const event = generateGameEvent();
-      const eventAmount = randNum(100, gameStorage.liquidity);
-
-      switch (event) {
-        case "ADD_TRADE":
-          const gap = scale(
-            gameStorage.liquidity,
-            MIN_LIQUIDITY,
-            MAX_LIQUIDITY,
-            MIN_GAP,
-            MAX_GAP
-          );
-
-          // decide the top bar height
-          const topBarHeight = scale(
-            eventAmount,
-            100,
-            gameStorage.liquidity,
-
-            // if this isn't the first bar and the cooldown hasn't ended, then
-            // make sure the bar is at least tall enough to not deviate too far
-            // from the last bar. Otherwise the min height is 0.
-            lastTopBarHeight && currentDeviationCooldown
-              ? Math.max(0, lastTopBarHeight - DEVIATION)
-              : 0,
-
-            // if this isn't the first bar and the cooldown hasn't ended, then
-            // make sure the bar is not so tall that it deviates too far from
-            // the last bar. Other wise the max height is the game height minus
-            // the gap.
-            lastTopBarHeight && currentDeviationCooldown
-              ? Math.min(k.height() - gap, lastTopBarHeight + DEVIATION)
-              : k.height() - gap
-          );
-
-          // set the bottom bar height to the remaining space after the top bar
-          // height and gap.
-          const bottomBarHeight = k.height() - topBarHeight - gap;
-
-          // if the next gap is lower than the last or this is the first gap and
-          // it's closer to the bottom than the top, then consider this trade a
-          // long.
-          const isLong =
-            topBarHeight > lastTopBarHeight ||
-            (!lastTopBarHeight && topBarHeight > k.height() / 2 - gap / 2);
-
-          // Make the bars red for longs and green for shorts
-          const barColor = isLong ? [255, 0, 0] : [0, 255, 0];
-
-          // add the bars to the game
-          Bar("top", topBarHeight, barColor);
-          Bar("bottom", bottomBarHeight, barColor);
-
-          // update stats
-          if (isLong) {
-            gameStorage.addLong(eventAmount);
-            updateStat("LONGS", gameStorage.longsVolume);
-          } else {
-            gameStorage.addShort(eventAmount);
-            updateStat("SHORTS", gameStorage.shortsVolume);
-          }
-          updateStat("VOLUME", gameStorage.totalVolume);
-
-          // reset the lastTopBarHeight
-          lastTopBarHeight = topBarHeight;
-
-          // reset the deviation cooldown
-          currentDeviationCooldown = DEVIATION_COOLDOWN;
-          return;
-
-        case "ADD_LIQUIDITY":
-          gameStorage.addLiquidity(eventAmount);
-          updateStat("LIQUIDITY", gameStorage.liquidity);
-          currentDeviationCooldown = Math.max(0, currentDeviationCooldown - 1);
-          return;
-
-        case "REMOVE_LIQUIDITY":
-          gameStorage.removeLiquidity(eventAmount);
-          updateStat("LIQUIDITY", gameStorage.liquidity);
-          currentDeviationCooldown = Math.max(0, currentDeviationCooldown - 1);
-      }
-    });
-
-    // Event callback handlers
-    k.onKeyPress("x", () => k.go("gameover"));
-    k.onKeyPress("space", () => player.jump(JUMP_FORCE));
-    k.onKeyPress("space", () => {
+    // Jump control which increases the score and shows a "+fees" message.
+    const jumpControl = k.onKeyPress("space", () => {
+      player.jump(JUMP_FORCE);
       const feesText = k.add([
         k.text("+Fees", {
           size: 24,
         }),
-        k.pos(k.width() - 100, 100),
-        origin("center"),
+        k.pos(gameWidth - 100, 100),
+        k.anchor("center"),
       ]);
-      gameStorage.score = gameStorage.score + 10;
-      updateStat("SCORE", gameStorage.score);
+      storage.score = storage.score + 10;
+      stats.update("SCORE", storage.score);
       k.wait(0.5, () => {
         k.destroy(feesText);
       });
     });
-  });
 
-  k.scene("gameover", () => {
-    k.add([k.text("Game over!"), k.pos(k.width() / 2, 50), origin("center")]);
-    k.add([
-      k.text("Press R to restart", {
-        size: 20,
-      }),
-      k.pos(k.width() / 2, 250),
-      origin("center"),
-    ]);
-
-    const statObjects = Object.values(stats);
-
-    statObjects.forEach((stat, i) => {
-      k.readd(stat);
-      stat.pos.x = k.width() / 2;
-      stat.pos.y = 270 + 20 * (i + 1);
-      stat.origin = "center";
+    // Update the speed every 200 ms.
+    k.loop(0.2, () => {
+      stats.update("SPEED", formatSpeed(currentPlayerSpeed));
     });
 
-    const highScore = localStorage.highScore || 0;
-    if (gameStorage.score > highScore) {
-      localStorage.highScore = gameStorage.score;
+    // Track the number of ticks without a trade event.
+    let ticksWithoutTrades = DEVIATION_COOLDOWN;
+
+    // Event loop
+    const eventController = k.loop(TIC_RATE, () => {
+      const event = events.generateGameEvent();
+      const eventAmount = randNum(100, storage.liquidity);
+
+      switch (event) {
+        case "ADD_TRADE":
+          const type = Math.random() > 0.5 ? "LONG" : "SHORT";
+
+          if (type === "LONG") {
+            storage.addLong(eventAmount);
+            stats.update("LONGS", storage.longsVolume);
+          } else {
+            storage.addShort(eventAmount);
+            stats.update("SHORTS", storage.shortsVolume);
+          }
+          stats.update("VOLUME", storage.totalVolume);
+
+          trades.add(
+            eventAmount,
+            type,
+            ticksWithoutTrades ? DEVIATION : undefined
+          );
+          eventFeed.add(
+            `${type === "LONG" ? "Long" : "Short"} added: ${eventAmount}`
+          );
+
+          // reset the deviation cooldown
+          ticksWithoutTrades = DEVIATION_COOLDOWN;
+          return;
+
+        case "ADD_LIQUIDITY":
+          storage.addLiquidity(eventAmount);
+          stats.update("LIQUIDITY", storage.liquidity);
+          eventFeed.add(`+${eventAmount} liquidity`);
+          ticksWithoutTrades = Math.max(0, ticksWithoutTrades - 1);
+          return;
+
+        case "REMOVE_LIQUIDITY":
+          storage.removeLiquidity(eventAmount);
+          stats.update("LIQUIDITY", storage.liquidity);
+          eventFeed.add(`-${eventAmount} liquidity`);
+          ticksWithoutTrades = Math.max(0, ticksWithoutTrades - 1);
+      }
+    });
+
+    // Prep variables for tweening.
+    const finalPlayerX = gameWidth + 100;
+    let speedTween: TweenController;
+    let speedStatTween: TweenController;
+    let playerSpeedTween: TweenController;
+    let currentPlayerSpeed = basePlayerSpeed;
+
+    // Tween speeds
+    function startTweening() {
+      // Derive the duration of the tween from the distance between the player's
+      // current and final position. The closer the player is to the final
+      // position, the less time it takes to speed up.
+      const duration = scale(
+        player.pos.x,
+        startingPlayerX,
+        finalPlayerX,
+        TIME_TO_HYPERDRIVE,
+        0
+      );
+
+      // Establish a speed the player will reach before engaging hyperdrive.
+      const finalPlayerSpeed = 10_000_000; // mph
+
+      // Tween the speed setting to affect the movement of background objects.
+      speedTween = k.tween(
+        SPEED,
+        FINAL_SPEED,
+        duration,
+        (speed) => {
+          settings.SPEED = speed;
+        },
+        k.easings.easeInCubic
+      );
+
+      // Tween the speed stat.
+      speedStatTween = k.tween(
+        basePlayerSpeed,
+        finalPlayerSpeed,
+        duration,
+        (speed) => {
+          currentPlayerSpeed = speed;
+          storage.topSpeed = Math.max(speed, storage.topSpeed);
+        },
+        k.easings.easeInCubic
+      );
+
+      // Tween the player speed to affect the player's movement.
+      playerSpeedTween = k.tween(
+        player.pos.x,
+        finalPlayerX,
+        duration,
+        (x) => {
+          player.pos.x = x;
+        },
+        k.easings.easeInCubic
+      );
     }
+
+    // Start tweening immediately
+    startTweening();
+
+    // Stop tweening when the player hits a bar.
+    player.onCollide("bar", () => {
+      playerSpeedTween.cancel();
+      speedStatTween.cancel();
+      speedTween.cancel();
+      stats.update("SPEED", formatSpeed(basePlayerSpeed));
+    });
+
+    // Start tweening again after the play clears the bar.
+    player.onCollideEnd("bar", () => {
+      startTweening();
+    });
+
+    // End the game when the player hits an obstacle.
+    player.onCollide("obstacle", () => {
+      k.go("gameover");
+    });
+
+    // Engage hyperdrive when the player hits the blastoff point.
+    player.onCollide("blastoff", () => {
+      // Stop tweening
+      speedTween.cancel();
+      playerSpeedTween.cancel();
+      speedStatTween.cancel();
+
+      // Stop the event loop
+      eventController.cancel();
+
+      // Destroy the blastoff point to allow the player to pass it.
+      blastoff.destroy();
+
+      // Stop any current animations the player is doing (e.g., jumping).
+      player.stop();
+
+      // Turn off the jump control.
+      jumpControl.cancel();
+
+      // Remove the player's gravity to keep it from falling after the jump
+      // control is turned off.
+      player.gravityScale = 0;
+
+      // Set the top speed to FTL for hyperspace.
+      storage.topSpeed = WARP_SPEED;
+
+      // Make the player move back slightly before suddenly blasting off.
+      playerSpeedTween = k.tween(
+        player.pos.x,
+        finalPlayerX + 100,
+        0.4,
+        (x) => (player.pos.x = x),
+        BezierEasing(0.6, -1, 0.8, -0.3)
+      );
+
+      k.wait(0.2, () => {
+        stats.update("SPEED", `${formatSpeed(WARP_SPEED)} mph`);
+      });
+
+      // End the game
+      k.wait(1, () => k.go("gameover"));
+    });
+  });
+
+  //////////////////////////////////////////////////////////////////////////////
+  // GAME OVER, MAN
+  //////////////////////////////////////////////////////////////////////////////
+  k.scene("gameover", () => {
+    k.add([k.text("Game over!"), k.pos(gameWidth / 2, 50), k.anchor("center")]);
+    k.add([
+      k.text("Press ENTER to restart", {
+        size: 20,
+      }),
+      k.pos(gameWidth / 2, 250),
+      k.anchor("center"),
+    ]);
+
+    const highScore = localStorage.highScore || 0;
+    if (storage.score > highScore) {
+      localStorage.highScore = storage.score;
+    }
+
+    const stats = new Stats(
+      k,
+      [
+        ["VOLUME", storage.totalVolume],
+        ["SCORE", storage.score],
+        ["TOP SPEED", formatSpeed(storage.topSpeed)],
+      ],
+      {
+        alignment: "center",
+        x: gameWidth / 2,
+        y: 270,
+      }
+    );
 
     k.add([
       k.text(`HIGH SCORE: ${localStorage.highScore}`, {
         size: 18,
       }),
-      k.pos(k.width() / 2, statObjects[statObjects.length - 1].pos.y + 40),
-      origin("center"),
+      k.pos(gameWidth / 2, stats.bottomY() + 40),
+      k.anchor("center"),
     ]);
 
     // Event callback handlers
-    k.onKeyPress("r", () => {
-      gameStorage = new GameStorage();
-      gameStorage.liquidity = MAX_LIQUIDITY;
-      updateStat("SCORE", gameStorage.score);
-      updateStat("LIQUIDITY", gameStorage.liquidity);
+    k.onKeyPress("enter", () => {
       k.go("game");
     });
   });
@@ -406,43 +462,6 @@ export function startGame() {
   focus();
 }
 
-const eventGCD = gcd(
-  ADD_TRADE_CHANCE,
-  ADD_LIQUIDITY_CHANCE,
-  REMOVE_LIQUIDITY_CHANCE
-);
-
-// Create a list of events where the count of each event is even to the events'
-// chances.
-const GameEvents = [
-  ...Array(ADD_TRADE_CHANCE / eventGCD).fill("ADD_TRADE"),
-  ...Array(ADD_LIQUIDITY_CHANCE / eventGCD).fill("ADD_LIQUIDITY"),
-  ...Array(REMOVE_LIQUIDITY_CHANCE / eventGCD).fill("REMOVE_LIQUIDITY"),
-] as const;
-
-const generateGameEvent = () => {
-  const hasEvent = Math.random() < EVENT_CHANCE / 100;
-  if (!hasEvent) {
-    console.log("NO EVENT");
-    return;
-  }
-  const seed = getRandomInt(GameEvents.length);
-  const event = GameEvents[seed];
-  console.log(event);
-  return event;
-};
-
-// delete when out of screen
-function handleout(k: KaboomCtx) {
-  return {
-    id: "handleout",
-    require: ["pos"],
-    update() {
-      const spos = this.screenPos();
-      if (spos.x > k.width() + 20 || spos.y < 0 || spos.y > k.height()) {
-        // triggers a custom event when out
-        this.trigger("out");
-      }
-    },
-  };
+function formatSpeed(speed: number) {
+  return speed === WARP_SPEED ? `Warp Speed!` : `${commify(speed, 0)} mph`;
 }

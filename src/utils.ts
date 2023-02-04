@@ -35,9 +35,11 @@ export function gcd(...numbers: number[]) {
   return final;
 }
 
-export function commify(number: number | string) {
+export function commify(number: number | string, decimals: number = 2) {
   const parts = number.toString().split(".");
+  const fraction: string | undefined = parts[1]?.slice(0, decimals);
+
   return `${parts[0].replace(/(?<!^)(?=(\d{3})+$)/g, ",")}${
-    parts.length > 1 ? `.${parts[1]}` : ""
+    fraction ? `.${fraction}` : ""
   }`;
 }
