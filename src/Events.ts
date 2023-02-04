@@ -25,7 +25,6 @@ export class Events {
   }
 
   public generateGameEvent(): Event | undefined {
-    console.log(this.settings.EVENT_CHANCE);
     const hasEvent = Math.random() < this.settings.EVENT_CHANCE / 100;
     if (!hasEvent) {
       return undefined;
