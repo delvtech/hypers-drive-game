@@ -166,26 +166,26 @@ export function startGame() {
         0,
         gameStorage.liquidity,
         0,
-        deviation ?? k.height() - gap
+        deviation ?? (k.height() - gap - 20) / 2
       );
 
       const tradeType: TradeType =
         type || Math.random() < 0.5 ? "SHORT" : "LONG";
 
       if (tradeType === "LONG") {
-        gapYPos = Math.min(k.height() - gap / 2, gapYPos + gapYPosMovement);
+        gapYPos = Math.min(k.height() - 10 - gap / 2, gapYPos + gapYPosMovement);
       } else {
-        gapYPos = Math.max(gap / 2, gapYPos - gapYPosMovement);
+        gapYPos = Math.max(gap / 2 + 10, gapYPos - gapYPosMovement);
       }
 
-      const topBarHeight = Math.max(0, gapYPos - gap / 2);
+      const topBarHeight = Math.max(10, gapYPos - gap / 2);
 
       // Make the bars red for longs and green for shorts
       const barColor = tradeType === "LONG" ? [255, 0, 0] : [0, 255, 0];
 
       // add the bars to the game
       Bar("top", topBarHeight, barColor);
-      Bar("bottom", Math.max(0, k.height() - topBarHeight - gap), barColor);
+      Bar("bottom", Math.max(10, k.height() - topBarHeight - gap), barColor);
 
       // update stats
       if (tradeType === "LONG") {
