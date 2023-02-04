@@ -43,4 +43,11 @@ export class GameStorage {
     this.longsVolume += amount;
     this.totalVolume += amount;
   }
+
+  public reset() {
+    this.liquidity = 100_000;
+    this.shortsVolume = 0;
+    this.longsVolume = 0;
+    this.totalVolume = 0;
+  }
 }
