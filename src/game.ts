@@ -217,10 +217,6 @@ export function startGame(gameSettings?: Partial<Settings>) {
       }),
     ]);
 
-    // Speed controls.
-    k.onKeyPress("up", () => (settings.SPEED += 1));
-    k.onKeyPress("down", () => (settings.SPEED -= 1));
-
     // Jump control which increases the score and shows a "+fees" message.
     const jumpControl = k.onKeyPress("space", () => {
       player.jump(JUMP_FORCE);
