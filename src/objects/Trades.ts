@@ -1,44 +1,52 @@
-import { MAX_LIQUIDITY, MIN_LIQUIDITY } from "../GameStorage";
-import { Game } from "../game";
+import { KaboomCtx } from "kaboom";
+import { GameStorage, MAX_LIQUIDITY, MIN_LIQUIDITY } from "../GameStorage";
 import { scale } from "../utils";
 import { Bar } from "./Bar";
+import { Settings } from "../settings";
 
 export type TradeType = "SHORT" | "LONG";
 
 export class Trades {
-  private game: Game;
+  // private game: Game;
+  private k: KaboomCtx;
+  private storage: GameStorage;
+  private settings: Settings;
+  private gameHeight: number;
   // the y position of the last gap's center
   private gapYPos: number;
 
-  constructor(game: Game) {
-    this.game = game;
-    this.gapYPos = game.k.height() / 2;
+  constructor(k: KaboomCtx, storage: GameStorage, settings: Settings) {
+    this.k = k;
+    this.storage = storage;
+    this.settings = settings;
+    this.gameHeight = k.height();
+    this.gapYPos = this.gameHeight / 2;
   }
 
   public add(amount: number, type: TradeType, deviation?: number) {
-    const { k } = this.game;
+    const { k, storage, settings, gameHeight } = this;
 
     // derive a gap width from liquidity
     const gap = scale(
-      this.game.storage.liquidity,
+      storage.liquidity,
       MIN_LIQUIDITY,
       MAX_LIQUIDITY,
-      this.game.settings.MIN_GAP,
-      this.game.settings.MAX_GAP
+      settings.MIN_GAP,
+      settings.MAX_GAP
     );
 
     // derive a gap movement from the amount
     const gapYPosMovement = scale(
       amount,
       0,
-      this.game.storage.liquidity,
+      storage.liquidity,
       0,
-      deviation ?? (k.height() - gap - 20) / 2
+      deviation ?? (gameHeight - gap - 20) / 2
     );
 
     if (type === "LONG") {
       this.gapYPos = Math.min(
-        k.height() - 10 - gap / 2,
+        gameHeight - 10 - gap / 2,
         this.gapYPos + gapYPosMovement
       );
     } else {
@@ -52,17 +60,17 @@ export class Trades {
 
     // add the bars to the game
     Bar({
-      k: k,
-      settings: this.game.settings,
+      k,
+      settings,
       position: "top",
       size: topBarHeight,
       color: barColor,
     });
     Bar({
-      k: k,
-      settings: this.game.settings,
+      k,
+      settings,
       position: "bottom",
-      size: Math.max(10, k.height() - topBarHeight - gap),
+      size: Math.max(10, gameHeight - topBarHeight - gap),
       color: barColor,
     });
   }

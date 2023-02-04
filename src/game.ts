@@ -1,6 +1,6 @@
-import kaboom, { KaboomCtx, TweenController } from "kaboom";
+import kaboom, { TweenController } from "kaboom";
 import { PatchedBodyCompOpt } from "./@types";
-import { GameStorage, MAX_LIQUIDITY } from "./GameStorage";
+import { GameStorage } from "./GameStorage";
 import { commify, randNum, scale } from "./utils";
 import { Settings } from "./settings";
 import { Stats } from "./objects/Stats";
@@ -12,12 +12,14 @@ import BezierEasing from "bezier-easing";
 /**
  * Add default settings to a partial settings object
  */
-function initSettings(settings?: Partial<Settings>) {
+function initSettings(settings?: Partial<Settings>): Settings {
   return {
     GRAVITY: 1750,
     JUMP_FORCE: 600,
     FALLING_VELOCITY: 600,
     SPEED: 5,
+    FINAL_SPEED: 15,
+    TIME_TO_HYPERDRIVE: 20,
     MIN_GAP: 150,
     MAX_GAP: 400,
     DEVIATION: 90,
@@ -31,49 +33,40 @@ function initSettings(settings?: Partial<Settings>) {
   };
 }
 
-// mph
-const SPEED_OF_LIGHT = 671_000_000;
+const SPEED_OF_LIGHT = 671_000_000; // mph
+const WARP_SPEED = SPEED_OF_LIGHT * 2
 
-export interface Game {
-  k: KaboomCtx;
-  settings: Settings;
-  storage: GameStorage;
-  events: Events;
-  width: number;
-  height: number;
-}
-
-export function startGame(settings?: Partial<Settings>) {
-  // create kaboom instance
+export function startGame(gameSettings?: Partial<Settings>) {
+  // Create kaboom instance
   const k = kaboom({
     background: [20, 20, 20],
   });
 
+  // Calculate once and reuse
+  const gameWidth = k.width();
+  const gameHeight = k.height();
+
   // Add defaults to settings
-  const settingsWithDefaults = initSettings(settings);
+  const settings = initSettings(gameSettings);
   const {
     GRAVITY,
     JUMP_FORCE,
     FALLING_VELOCITY,
     SPEED,
+    FINAL_SPEED,
+    TIME_TO_HYPERDRIVE,
     DEVIATION,
     DEVIATION_COOLDOWN,
     TIC_RATE,
-  } = settingsWithDefaults;
+  } = settings;
 
-  // create a game object with all settings defined
-  const game: Game = {
-    k,
-    settings: settingsWithDefaults,
-    storage: new GameStorage(),
-    events: new Events(settingsWithDefaults),
-    width: k.width(),
-    height: k.height(),
-  };
+  // Initiate helper classes
+  const storage = new GameStorage();
+  const events = new Events(settings);
 
-  // initiate reusable object classes outside the scenes
-  const eventFeed = new EventFeed(game);
-  const trades = new Trades(game);
+  // Initiate reusable object classes outside the scenes
+  const eventFeed = new EventFeed(k);
+  const trades = new Trades(k, storage, settings);
 
   // // Load fonts
   k.loadFont("M23", "/m23.TTF");
@@ -94,7 +87,7 @@ export function startGame(settings?: Partial<Settings>) {
         font: "M23",
         size: 96,
       }),
-      k.pos(game.width / 2, 200),
+      k.pos(gameWidth / 2, 200),
       k.anchor("center"),
     ]);
 
@@ -119,7 +112,7 @@ export function startGame(settings?: Partial<Settings>) {
     k.add([
       k.sprite("ryanGosling"),
       k.scale(0.5, 0.5),
-      k.pos(game.width / 2, game.height / 2 + 100),
+      k.pos(gameWidth / 2, gameHeight / 2 + 100),
       k.anchor("center"),
       k.area(),
       k.body({
@@ -129,8 +122,6 @@ export function startGame(settings?: Partial<Settings>) {
 
     // Event callback handlers
     k.onKeyPress("enter", () => {
-      game.storage = new GameStorage();
-      game.storage.liquidity = MAX_LIQUIDITY;
       k.go("game");
     });
   });
@@ -139,21 +130,30 @@ export function startGame(settings?: Partial<Settings>) {
   // GAME
   //////////////////////////////////////////////////////////////////////////////
   k.scene("game", () => {
+    // Reset storage to default state
+    storage.reset();
+
+    // Establish gravity
     k.setGravity(GRAVITY);
 
+    // add the event feed
     k.add(eventFeed.container);
 
-    const baseSpeed = SPEED * 100_000;
+    // Set a base player speed based on the SPEED setting. The player speed
+    // represents the speed at which the player is moving through space. At the
+    // base speed, only the background actually moves on the canvas.
+    const basePlayerSpeed = SPEED * 100_000; // mph
 
+    // Add a list of stats
     const stats = new Stats(
       k,
       [
-        ["LIQUIDITY", game.storage.liquidity],
-        ["LONGS", game.storage.longsVolume],
-        ["SHORTS", game.storage.shortsVolume],
-        ["VOLUME", game.storage.totalVolume],
-        ["SCORE", game.storage.score],
-        ["SPEED", commify(baseSpeed)],
+        ["LIQUIDITY", storage.liquidity],
+        ["LONGS", storage.longsVolume],
+        ["SHORTS", storage.shortsVolume],
+        ["VOLUME", storage.totalVolume],
+        ["SCORE", storage.score],
+        ["SPEED", commify(basePlayerSpeed)],
       ],
       {
         x: 20,
@@ -161,7 +161,50 @@ export function startGame(settings?: Partial<Settings>) {
       }
     );
 
-    const startingPlayerX = game.width / 5;
+    // Add boundaries. If the player hits a boundary, it's game over.
+    k.add([
+      "top",
+      "obstacle",
+      k.rect(gameWidth, 4),
+      k.pos(0, 0),
+      k.anchor("topleft"),
+      k.area(),
+      k.body({ isSolid: true, isStatic: true } as PatchedBodyCompOpt),
+      k.color(255, 0, 0),
+    ]);
+    k.add([
+      "bottom",
+      "obstacle",
+      k.rect(gameWidth, 4),
+      k.pos(0, gameHeight),
+      k.anchor("botleft"),
+      k.area(),
+      k.body({ isSolid: true, isStatic: true } as PatchedBodyCompOpt),
+      k.color(255, 0, 0),
+    ]);
+    k.add([
+      "left",
+      "obstacle",
+      k.rect(4, gameHeight),
+      k.pos(0, 0),
+      k.anchor("topleft"),
+      k.area(),
+      k.body({ isSolid: true, isStatic: true } as PatchedBodyCompOpt),
+      k.color(255, 0, 0),
+    ]);
+
+    // Add the blastoff point. When the player reaches the blastoff point, they
+    // engage hyperdrive and fly off screen at light speed.
+    const blastoff = k.add([
+      "blastoff",
+      k.rect(0, gameHeight),
+      k.pos(gameWidth - 50, 0),
+      k.anchor("topright"),
+      k.area(),
+    ]);
+
+    // Add the player and define it's starting x position
+    const startingPlayerX = gameWidth / 5;
     const player = k.add([
       k.sprite("bird"),
       k.pos(startingPlayerX, 80),
@@ -173,185 +216,207 @@ export function startGame(settings?: Partial<Settings>) {
       }),
     ]);
 
-    // boundaries
-    k.add([
-      "top",
-      "obstacle",
-      k.rect(game.width, 4),
-      k.pos(0, 0),
-      k.anchor("topleft"),
-      k.area(),
-      k.body({ isSolid: true, isStatic: true } as PatchedBodyCompOpt),
-      k.color(255, 0, 0),
-    ]);
-    k.add([
-      "bottom",
-      "obstacle",
-      k.rect(game.width, 4),
-      k.pos(0, game.height),
-      k.anchor("botleft"),
-      k.area(),
-      k.body({ isSolid: true, isStatic: true } as PatchedBodyCompOpt),
-      k.color(255, 0, 0),
-    ]);
-    k.add([
-      "left",
-      "obstacle",
-      k.rect(4, game.height),
-      k.pos(0, 0),
-      k.anchor("topleft"),
-      k.area(),
-      k.body({ isSolid: true, isStatic: true } as PatchedBodyCompOpt),
-      k.color(255, 0, 0),
-    ]);
-    k.add([
-      "right-color",
-      k.rect(4, game.height),
-      k.pos(game.width, 0),
-      k.anchor("topright"),
-      k.color(0, 255, 0),
-    ]);
+    // Speed controls.
+    k.onKeyPress("up", () => (settings.SPEED += 1));
+    k.onKeyPress("down", () => (settings.SPEED -= 1));
 
-    let speedStatTween: TweenController;
+    // Jump control which increases the score and shows a "+fees" message.
+    const jumpControl = k.onKeyPress("space", () => {
+      player.jump(JUMP_FORCE);
+      const feesText = k.add([
+        k.text("+Fees", {
+          size: 24,
+        }),
+        k.pos(gameWidth - 100, 100),
+        k.anchor("center"),
+      ]);
+      storage.score = storage.score + 10;
+      stats.update("SCORE", storage.score);
+      k.wait(0.5, () => {
+        k.destroy(feesText);
+      });
+    });
+
+    // Prep variables for tweening.
     let speedTween: TweenController;
-    let currentSpeed = baseSpeed;
-    const finalPlayerX = game.width + 100;
+    let speedStatTween: TweenController;
+    let playerSpeedTween: TweenController;
+    let currentPlayerSpeed = basePlayerSpeed;
+    const finalPlayerX = gameWidth + 100;
 
+    // Tween speeds
     function startTweening() {
+
+      // Derive the duration of the tween from the distance between the player's
+      // current and final position. The closer the player is to the final
+      // position, the less time it takes to speed up.
       const duration = scale(
         player.pos.x,
         startingPlayerX,
         finalPlayerX,
-        20,
+        TIME_TO_HYPERDRIVE,
         0
       );
-      const finalSpeed = 10_000_000;
 
-      speedStatTween = k.tween(
-        baseSpeed,
-        finalSpeed,
+      // Establish a speed the player will reach before engaging hyperdrive.
+      const finalPlayerSpeed = 10_000_000; // mph
+
+      // Tween the speed setting to affect the movement of background objects.
+      speedTween = k.tween(
+        SPEED,
+        FINAL_SPEED,
         duration,
         (speed) => {
-          currentSpeed = speed;
-          game.storage.topSpeed = Math.max(speed, game.storage.topSpeed);
+          settings.SPEED = speed;
         },
         k.easings.easeInCubic
       );
 
-      speedTween = k.tween(
+      // Tween the speed stat.
+      speedStatTween = k.tween(
+        basePlayerSpeed,
+        finalPlayerSpeed,
+        duration,
+        (speed) => {
+          currentPlayerSpeed = speed;
+          storage.topSpeed = Math.max(speed, storage.topSpeed);
+        },
+        k.easings.easeInCubic
+      );
+
+      // Tween the player speed to affect the player's movement.
+      playerSpeedTween = k.tween(
         player.pos.x,
         finalPlayerX,
         duration,
         (x) => {
-          if (x >= game.width - game.width / 8) {
-            game.storage.topSpeed = SPEED_OF_LIGHT;
-            speedTween.cancel();
-            speedTween = k.tween(
-              player.pos.x,
-              finalPlayerX,
-              0.6,
-              (x) => (player.pos.x = x),
-              BezierEasing(0.6, -0.6, 1.0, -0.2)
-            );
-            speedStatTween.cancel();
-            speedStatTween = k.tween(
-              currentSpeed,
-              SPEED_OF_LIGHT,
-              0.6,
-              (speed) => {
-                stats.update("SPEED", `${commify(speed, 0)} mph`);
-              },
-              BezierEasing(0.6, 0, 1.0, 0)
-            );
-            k.wait(0.6, () => k.go("gameover"));
-          }
           player.pos.x = x;
         },
         k.easings.easeInCubic
       );
     }
 
+    // Start tweening immediately
     startTweening();
 
+    // Stop tweening when the player hits a bar.
     player.onCollide("bar", () => {
-      speedTween.cancel();
+      playerSpeedTween.cancel();
       speedStatTween.cancel();
-      stats.update("SPEED", commify(0));
+      speedTween.cancel();
+      stats.update("SPEED", formatSpeed(0));
     });
+
+    // Start tweening again after the play clears the bar.
     player.onCollideEnd("bar", () => {
       startTweening();
     });
 
+    // End the game when the player hits an obstacle.
     player.onCollide("obstacle", () => {
       k.go("gameover");
     });
 
-    let currentDeviationCooldown = DEVIATION_COOLDOWN;
+    // Engage hyperdrive when the player hits the blastoff point.
+    player.onCollide("blastoff", () => {
 
-    k.loop(0.2, () => {
-      stats.update("SPEED", commify(currentSpeed, 0));
+      // Stop tweening
+      speedTween.cancel();
+      playerSpeedTween.cancel();
+      speedStatTween.cancel();
+
+      // Destroy the blastoff point to allow the player to pass it.
+      blastoff.destroy();
+
+      // Stop any current animations the player is doing (e.g., jumping).
+      player.stop();
+
+      // Turn off the jump control.
+      jumpControl.cancel();
+
+      // Remove the player's gravity to keep it from falling after the jump
+      // control is turned off.
+      player.gravityScale = 0;
+
+      // Set the top speed to FTL for hyperspace.
+      storage.topSpeed = WARP_SPEED;
+
+      // Make the player move back slightly before suddenly blasting off.
+      playerSpeedTween = k.tween(
+        player.pos.x,
+        finalPlayerX + 100,
+        0.4,
+        (x) => (player.pos.x = x),
+        BezierEasing(0.6, -1, 0.8, -0.3)
+      );
+
+      // Tween the speed stat all the way up to FTL in just 400 ms.
+      speedStatTween = k.tween(
+        currentPlayerSpeed,
+        WARP_SPEED,
+        0.4,
+        (speed) => {
+          stats.update("SPEED", `${commify(speed, 0)} mph`);
+        },
+        BezierEasing(1, 0, 1, 0)
+      );
+
+      // End the game
+      k.wait(1, () => k.go("gameover"));
     });
 
+    // Update the speed every 200 ms.
+    k.loop(0.2, () => {
+      stats.update("SPEED", formatSpeed(currentPlayerSpeed));
+    });
+
+    // Track the number of ticks without a trade event.
+    let ticksWithoutTrades = DEVIATION_COOLDOWN;
+
+    // Event loop
     k.loop(TIC_RATE, () => {
-      const event = game.events.generateGameEvent();
-      const eventAmount = randNum(100, game.storage.liquidity);
+      const event = events.generateGameEvent();
+      const eventAmount = randNum(100, storage.liquidity);
 
       switch (event) {
         case "ADD_TRADE":
           const type = Math.random() > 0.5 ? "LONG" : "SHORT";
 
           if (type === "LONG") {
-            game.storage.addLong(eventAmount);
-            stats.update("LONGS", game.storage.longsVolume);
+            storage.addLong(eventAmount);
+            stats.update("LONGS", storage.longsVolume);
           } else {
-            game.storage.addShort(eventAmount);
-            stats.update("SHORTS", game.storage.shortsVolume);
+            storage.addShort(eventAmount);
+            stats.update("SHORTS", storage.shortsVolume);
           }
-          stats.update("VOLUME", game.storage.totalVolume);
+          stats.update("VOLUME", storage.totalVolume);
 
           trades.add(
             eventAmount,
             type,
-            currentDeviationCooldown ? DEVIATION : undefined
+            ticksWithoutTrades ? DEVIATION : undefined
           );
           eventFeed.add(
             `${type === "LONG" ? "Long" : "Short"} added: ${eventAmount}`
           );
 
           // reset the deviation cooldown
-          currentDeviationCooldown = DEVIATION_COOLDOWN;
+          ticksWithoutTrades = DEVIATION_COOLDOWN;
           return;
 
         case "ADD_LIQUIDITY":
-          game.storage.addLiquidity(eventAmount);
-          stats.update("LIQUIDITY", game.storage.liquidity);
+          storage.addLiquidity(eventAmount);
+          stats.update("LIQUIDITY", storage.liquidity);
           eventFeed.add(`+${eventAmount} liquidity`);
-          currentDeviationCooldown = Math.max(0, currentDeviationCooldown - 1);
+          ticksWithoutTrades = Math.max(0, ticksWithoutTrades - 1);
           return;
 
         case "REMOVE_LIQUIDITY":
-          game.storage.removeLiquidity(eventAmount);
-          stats.update("LIQUIDITY", game.storage.liquidity);
+          storage.removeLiquidity(eventAmount);
+          stats.update("LIQUIDITY", storage.liquidity);
           eventFeed.add(`-${eventAmount} liquidity`);
-          currentDeviationCooldown = Math.max(0, currentDeviationCooldown - 1);
+          ticksWithoutTrades = Math.max(0, ticksWithoutTrades - 1);
       }
-    });
-
-    // Event callback handlers
-    k.onKeyPress("space", () => player.jump(JUMP_FORCE));
-    k.onKeyPress("space", () => {
-      const feesText = k.add([
-        k.text("+Fees", {
-          size: 24,
-        }),
-        k.pos(game.width - 100, 100),
-        k.anchor("center"),
-      ]);
-      game.storage.score = game.storage.score + 10;
-      stats.update("SCORE", game.storage.score);
-      k.wait(0.5, () => {
-        k.destroy(feesText);
-      });
     });
   });
 
@@ -359,34 +424,30 @@ export function startGame(settings?: Partial<Settings>) {
   // GAME OVER, MAN
   //////////////////////////////////////////////////////////////////////////////
   k.scene("gameover", () => {
-    k.add([
-      k.text("Game over!"),
-      k.pos(game.width / 2, 50),
-      k.anchor("center"),
-    ]);
+    k.add([k.text("Game over!"), k.pos(gameWidth / 2, 50), k.anchor("center")]);
     k.add([
       k.text("Press ENTER to restart", {
         size: 20,
       }),
-      k.pos(game.width / 2, 250),
+      k.pos(gameWidth / 2, 250),
       k.anchor("center"),
     ]);
 
     const highScore = localStorage.highScore || 0;
-    if (game.storage.score > highScore) {
-      localStorage.highScore = game.storage.score;
+    if (storage.score > highScore) {
+      localStorage.highScore = storage.score;
     }
 
     const stats = new Stats(
       k,
       [
-        ["VOLUME", game.storage.totalVolume],
-        ["SCORE", game.storage.score],
-        ["TOP SPEED", commify(game.storage.topSpeed, 0)],
+        ["VOLUME", storage.totalVolume],
+        ["SCORE", storage.score],
+        ["TOP SPEED", formatSpeed(storage.topSpeed)],
       ],
       {
         alignment: "center",
-        x: game.width / 2,
+        x: gameWidth / 2,
         y: 270,
       }
     );
@@ -395,14 +456,12 @@ export function startGame(settings?: Partial<Settings>) {
       k.text(`HIGH SCORE: ${localStorage.highScore}`, {
         size: 18,
       }),
-      k.pos(game.width / 2, stats.bottomY() + 40),
+      k.pos(gameWidth / 2, stats.bottomY() + 40),
       k.anchor("center"),
     ]);
 
     // Event callback handlers
     k.onKeyPress("enter", () => {
-      game.storage = new GameStorage();
-      game.storage.liquidity = MAX_LIQUIDITY;
       k.go("game");
     });
   });
@@ -412,6 +471,6 @@ export function startGame(settings?: Partial<Settings>) {
   focus();
 }
 
-function formatSpeed(speed: number, baseSpeed: number) {
-  return `${commify(baseSpeed * 100_000 + speed * 1_000_000, 0)} mph`;
+function formatSpeed(speed: number) {
+  return `${commify(speed, 0)} mph`;
 }

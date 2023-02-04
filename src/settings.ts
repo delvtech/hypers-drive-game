@@ -15,9 +15,23 @@ export interface Settings {
   FALLING_VELOCITY: number;
 
   /**
-   * The speed at which the items in the background move horizontally.
+   * The speed at which the items in the background move horizontally at the
+   * start of the game.
    */
   SPEED: number;
+
+  /**
+   * The speed at which the items in the background move horizontally by the end
+   * of the game.
+   */
+  FINAL_SPEED: number;
+
+  /**
+   * The time it takes from to reach hyperdrive from the player's starting
+   * position. The time will be adjusted as the player moves. When the player
+   * moves closer to the goal, the time to hyperdrive will decrease.
+   */
+  TIME_TO_HYPERDRIVE: number;
 
   /**
    * The minimum amount of space between the top and bottom bar

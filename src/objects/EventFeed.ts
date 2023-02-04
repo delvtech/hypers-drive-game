@@ -1,5 +1,4 @@
-import { AnchorComp, GameObj, PosComp, ZComp } from "kaboom";
-import { Game } from "../game";
+import { AnchorComp, GameObj, KaboomCtx, PosComp, ZComp } from "kaboom";
 
 export interface EventFeedOptions {
   /**
@@ -14,16 +13,15 @@ export interface EventFeedOptions {
 }
 
 export class EventFeed {
-  private game: Game;
+  private k: KaboomCtx;
   private max = 5;
 
   public container: GameObj<PosComp | AnchorComp | ZComp>;
 
-  constructor(game: Game, options?: EventFeedOptions) {
-    const { k } = game;
-    const { max = 5 } = options || {};
+  constructor(k: KaboomCtx, options?: EventFeedOptions) {
+    this.k = k;
 
-    this.game = game;
+    const { max = 5 } = options || {};
     this.max = max;
 
     this.container = k.add([
@@ -34,7 +32,7 @@ export class EventFeed {
   }
 
   public add(label: string) {
-    const { k } = this.game;
+    const k = this.k;
 
     // remove the oldest event from the feed if it's maxed out.
     if (this.container.children.length === this.max) {
@@ -60,7 +58,7 @@ export class EventFeed {
   }
 
   public clear() {
-    const { k } = this.game;
+    const k = this.k;
 
     for (const event of this.container.children) {
       k.destroy(event);

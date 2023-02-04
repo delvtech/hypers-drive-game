@@ -5,21 +5,15 @@ export type Event = "ADD_TRADE" | "ADD_LIQUIDITY" | "REMOVE_LIQUIDITY";
 
 export class Events {
   private events: Event[];
-  private eventChance: number;
+  private settings: Settings;
 
-  constructor({
-    ADD_TRADE_CHANCE,
-    ADD_LIQUIDITY_CHANCE,
-    REMOVE_LIQUIDITY_CHANCE,
-    EVENT_CHANCE,
-  }: Settings) {
-    this.eventChance = EVENT_CHANCE;
+  constructor(settings: Settings) {
+    this.settings = settings;
+    const { ADD_TRADE_CHANCE, ADD_LIQUIDITY_CHANCE, REMOVE_LIQUIDITY_CHANCE } =
+      settings;
 
-    const eventGCD = gcd(
-      ADD_TRADE_CHANCE,
-      ADD_LIQUIDITY_CHANCE,
-      REMOVE_LIQUIDITY_CHANCE
-    );
+    const eventGCD =
+      gcd(ADD_TRADE_CHANCE, ADD_LIQUIDITY_CHANCE, REMOVE_LIQUIDITY_CHANCE) || 1;
 
     // Create a list of events where the count of each event in relation to the
     // count of all events is proportional to the events' chances.
@@ -31,7 +25,8 @@ export class Events {
   }
 
   public generateGameEvent(): Event | undefined {
-    const hasEvent = Math.random() < this.eventChance / 100;
+    console.log(this.settings.EVENT_CHANCE);
+    const hasEvent = Math.random() < this.settings.EVENT_CHANCE / 100;
     if (!hasEvent) {
       return undefined;
     }

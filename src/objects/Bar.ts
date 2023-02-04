@@ -1,5 +1,5 @@
 import { KaboomCtx } from "kaboom";
-import { background, handleout } from "./comps";
+import { background } from "./comps";
 import { Settings } from "../settings";
 
 interface BarOptions {
@@ -20,7 +20,7 @@ export function Bar({ k, settings, position, size, color }: BarOptions) {
     k.anchor(position === "top" ? "topleft" : "botleft"),
     k.pos(k.width(), position === "top" ? 0 : k.height()),
     k.color(...(color as [number, number, number])),
+    k.offscreen({ destroy: true }),
     background(settings),
-    handleout(k),
   ]);
 }

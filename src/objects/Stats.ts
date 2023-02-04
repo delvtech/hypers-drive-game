@@ -1,6 +1,5 @@
 import {
   AnchorComp,
-  Comp,
   GameObj,
   KaboomCtx,
   PosComp,
@@ -18,9 +17,8 @@ export interface StatsOptions {
 }
 
 export class Stats<S extends string = string> {
-  private statsByLabel: Record<S, StatStorage>;
-
   public container: GameObj<PosComp | AnchorComp | ZComp>;
+  private statsByLabel: Record<S, StatStorage>;
 
   constructor(k: KaboomCtx, stats: Stat<S>[], options?: StatsOptions) {
     let anchor: Parameters<typeof k.anchor>[0];
