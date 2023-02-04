@@ -8,7 +8,7 @@ export class GameStorage {
   public totalVolume: number;
   public topSpeed: number;
 
-  public score: number = 0;
+  public score: number;
 
   constructor() {
     this.liquidity = 100_000;
@@ -16,6 +16,7 @@ export class GameStorage {
     this.longsVolume = 0;
     this.totalVolume = 0;
     this.topSpeed = 0;
+    this.score = 0;
   }
 
   public addLiquidity(amount: number) {
@@ -52,5 +53,6 @@ export class GameStorage {
     this.longsVolume = 0;
     this.totalVolume = 0;
     this.topSpeed = 0;
+    this.score = 0;
   }
 }

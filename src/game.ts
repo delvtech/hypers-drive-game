@@ -24,7 +24,7 @@ function initSettings(settings?: Partial<Settings>): Settings {
     MAX_GAP: 400,
     DEVIATION: 90,
     DEVIATION_COOLDOWN: 1,
-    TIC_RATE: 1,
+    TIC_RATE: .8,
     EVENT_CHANCE: 100,
     ADD_TRADE_CHANCE: 50,
     ADD_LIQUIDITY_CHANCE: 25,
@@ -34,7 +34,7 @@ function initSettings(settings?: Partial<Settings>): Settings {
 }
 
 const SPEED_OF_LIGHT = 671_000_000; // mph
-const WARP_SPEED = SPEED_OF_LIGHT * 2
+const WARP_SPEED = SPEED_OF_LIGHT * 2;
 
 export function startGame(gameSettings?: Partial<Settings>) {
   // Create kaboom instance
@@ -136,8 +136,9 @@ export function startGame(gameSettings?: Partial<Settings>) {
     // Establish gravity
     k.setGravity(GRAVITY);
 
-    // add the event feed
+    // Reset and add the event feed
     k.add(eventFeed.container);
+    eventFeed.clear();
 
     // Set a base player speed based on the SPEED setting. The player speed
     // represents the speed at which the player is moving through space. At the
@@ -237,16 +238,69 @@ export function startGame(gameSettings?: Partial<Settings>) {
       });
     });
 
+    // Update the speed every 200 ms.
+    k.loop(0.2, () => {
+      stats.update("SPEED", formatSpeed(currentPlayerSpeed));
+    });
+
+    // Track the number of ticks without a trade event.
+    let ticksWithoutTrades = DEVIATION_COOLDOWN;
+
+    // Event loop
+    const eventController = k.loop(TIC_RATE, () => {
+      const event = events.generateGameEvent();
+      const eventAmount = randNum(100, storage.liquidity);
+
+      switch (event) {
+        case "ADD_TRADE":
+          const type = Math.random() > 0.5 ? "LONG" : "SHORT";
+
+          if (type === "LONG") {
+            storage.addLong(eventAmount);
+            stats.update("LONGS", storage.longsVolume);
+          } else {
+            storage.addShort(eventAmount);
+            stats.update("SHORTS", storage.shortsVolume);
+          }
+          stats.update("VOLUME", storage.totalVolume);
+
+          trades.add(
+            eventAmount,
+            type,
+            ticksWithoutTrades ? DEVIATION : undefined
+          );
+          eventFeed.add(
+            `${type === "LONG" ? "Long" : "Short"} added: ${eventAmount}`
+          );
+
+          // reset the deviation cooldown
+          ticksWithoutTrades = DEVIATION_COOLDOWN;
+          return;
+
+        case "ADD_LIQUIDITY":
+          storage.addLiquidity(eventAmount);
+          stats.update("LIQUIDITY", storage.liquidity);
+          eventFeed.add(`+${eventAmount} liquidity`);
+          ticksWithoutTrades = Math.max(0, ticksWithoutTrades - 1);
+          return;
+
+        case "REMOVE_LIQUIDITY":
+          storage.removeLiquidity(eventAmount);
+          stats.update("LIQUIDITY", storage.liquidity);
+          eventFeed.add(`-${eventAmount} liquidity`);
+          ticksWithoutTrades = Math.max(0, ticksWithoutTrades - 1);
+      }
+    });
+
     // Prep variables for tweening.
+    const finalPlayerX = gameWidth + 100;
     let speedTween: TweenController;
     let speedStatTween: TweenController;
     let playerSpeedTween: TweenController;
     let currentPlayerSpeed = basePlayerSpeed;
-    const finalPlayerX = gameWidth + 100;
 
     // Tween speeds
     function startTweening() {
-
       // Derive the duration of the tween from the distance between the player's
       // current and final position. The closer the player is to the final
       // position, the less time it takes to speed up.
@@ -304,7 +358,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
       playerSpeedTween.cancel();
       speedStatTween.cancel();
       speedTween.cancel();
-      stats.update("SPEED", formatSpeed(0));
+      stats.update("SPEED", formatSpeed(basePlayerSpeed));
     });
 
     // Start tweening again after the play clears the bar.
@@ -319,11 +373,13 @@ export function startGame(gameSettings?: Partial<Settings>) {
 
     // Engage hyperdrive when the player hits the blastoff point.
     player.onCollide("blastoff", () => {
-
       // Stop tweening
       speedTween.cancel();
       playerSpeedTween.cancel();
       speedStatTween.cancel();
+
+      // Stop the event loop
+      eventController.cancel();
 
       // Destroy the blastoff point to allow the player to pass it.
       blastoff.destroy();
@@ -350,73 +406,12 @@ export function startGame(gameSettings?: Partial<Settings>) {
         BezierEasing(0.6, -1, 0.8, -0.3)
       );
 
-      // Tween the speed stat all the way up to FTL in just 400 ms.
-      speedStatTween = k.tween(
-        currentPlayerSpeed,
-        WARP_SPEED,
-        0.4,
-        (speed) => {
-          stats.update("SPEED", `${commify(speed, 0)} mph`);
-        },
-        BezierEasing(1, 0, 1, 0)
-      );
+      k.wait(0.2, () => {
+        stats.update("SPEED", `${formatSpeed(WARP_SPEED)} mph`);
+      });
 
       // End the game
       k.wait(1, () => k.go("gameover"));
-    });
-
-    // Update the speed every 200 ms.
-    k.loop(0.2, () => {
-      stats.update("SPEED", formatSpeed(currentPlayerSpeed));
-    });
-
-    // Track the number of ticks without a trade event.
-    let ticksWithoutTrades = DEVIATION_COOLDOWN;
-
-    // Event loop
-    k.loop(TIC_RATE, () => {
-      const event = events.generateGameEvent();
-      const eventAmount = randNum(100, storage.liquidity);
-
-      switch (event) {
-        case "ADD_TRADE":
-          const type = Math.random() > 0.5 ? "LONG" : "SHORT";
-
-          if (type === "LONG") {
-            storage.addLong(eventAmount);
-            stats.update("LONGS", storage.longsVolume);
-          } else {
-            storage.addShort(eventAmount);
-            stats.update("SHORTS", storage.shortsVolume);
-          }
-          stats.update("VOLUME", storage.totalVolume);
-
-          trades.add(
-            eventAmount,
-            type,
-            ticksWithoutTrades ? DEVIATION : undefined
-          );
-          eventFeed.add(
-            `${type === "LONG" ? "Long" : "Short"} added: ${eventAmount}`
-          );
-
-          // reset the deviation cooldown
-          ticksWithoutTrades = DEVIATION_COOLDOWN;
-          return;
-
-        case "ADD_LIQUIDITY":
-          storage.addLiquidity(eventAmount);
-          stats.update("LIQUIDITY", storage.liquidity);
-          eventFeed.add(`+${eventAmount} liquidity`);
-          ticksWithoutTrades = Math.max(0, ticksWithoutTrades - 1);
-          return;
-
-        case "REMOVE_LIQUIDITY":
-          storage.removeLiquidity(eventAmount);
-          stats.update("LIQUIDITY", storage.liquidity);
-          eventFeed.add(`-${eventAmount} liquidity`);
-          ticksWithoutTrades = Math.max(0, ticksWithoutTrades - 1);
-      }
     });
   });
 
@@ -472,5 +467,5 @@ export function startGame(gameSettings?: Partial<Settings>) {
 }
 
 function formatSpeed(speed: number) {
-  return `${commify(speed, 0)} mph`;
+  return speed === WARP_SPEED ? `Warp Speed!` : `${commify(speed, 0)} mph`;
 }

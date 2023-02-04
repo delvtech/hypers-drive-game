@@ -4,25 +4,25 @@ export interface EventFeedOptions {
   /**
    * The max number of events to show in the log at once.
    */
-  max: number;
+  max?: number;
 
   /**
    * how many seconds until events automatically disappear.
    */
-  ttl: number;
+  ttl?: number;
 }
 
 export class EventFeed {
   private k: KaboomCtx;
-  private max = 5;
+  private ttl: number;
+  private max?: number;
 
   public container: GameObj<PosComp | AnchorComp | ZComp>;
 
   constructor(k: KaboomCtx, options?: EventFeedOptions) {
     this.k = k;
-
-    const { max = 5 } = options || {};
-    this.max = max;
+    this.ttl = options?.ttl ?? 4;
+    this.max = options?.max;
 
     this.container = k.add([
       k.pos(20, k.height() - 20),
@@ -54,14 +54,14 @@ export class EventFeed {
     ]);
 
     // automatically destroy the event after 5 seconds.
-    k.wait(5, () => k.destroy(event));
+    k.wait(this.ttl, () => event.destroy());
   }
 
   public clear() {
     const k = this.k;
 
-    for (const event of this.container.children) {
-      k.destroy(event);
+    while (this.container.children.length) {
+      k.destroy(this.container.children[0]);
     }
   }
 }
