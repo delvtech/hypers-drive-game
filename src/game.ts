@@ -1,4 +1,4 @@
-import kaboom, { GameObj, TimerController, TweenController } from "kaboom";
+import kaboom, { TweenController } from "kaboom";
 import { PatchedBodyCompOpt } from "./@types";
 import { GameStorage } from "./GameStorage";
 import { commify, randNum, scale } from "./utils";
@@ -21,7 +21,7 @@ function initSettings(settings?: Partial<Settings>): Settings {
     FINAL_SPEED: 15,
     TIME_TO_HYPERDRIVE: 20,
     MIN_GAP: 180,
-    MAX_GAP: 350,
+    MAX_GAP: 400,
     DEVIATION: 90,
     DEVIATION_COOLDOWN: 1,
     TIC_RATE: 0.7,
@@ -98,7 +98,42 @@ export function startGame(gameSettings?: Partial<Settings>) {
   //////////////////////////////////////////////////////////////////////////////
   // START
   //////////////////////////////////////////////////////////////////////////////
+
   k.scene("start", () => {
+    // Generate random stars
+    for (let i = 0; i < 100; i++) {
+      const star = k.add([
+        "star",
+        k.circle(randNum(1, 2)),
+        k.pos(randNum(0, gameWidth), randNum(0, gameHeight)),
+        k.anchor("left"),
+        k.color(255, 255, 255),
+        k.opacity(randNum(2, 6) / 10),
+        k.offscreen({ destroy: true }),
+        k.z(Z.stars),
+        k.stay(),
+      ]);
+      star.onUpdate(() => {
+        star.pos.x -= randNum(0.2, 1);
+      });
+    }
+    k.loop(0.5, () => {
+      const star = k.add([
+        "star",
+        k.circle(randNum(1, 2)),
+        k.pos(gameWidth, randNum(0, gameHeight)),
+        k.anchor("left"),
+        k.color(255, 255, 255),
+        k.opacity(randNum(2, 6) / 10),
+        k.offscreen({ destroy: true }),
+        k.z(Z.stars),
+        k.stay(),
+      ]);
+      star.onUpdate(() => {
+        star.pos.x -= randNum(0.2, 1);
+      });
+    });
+
     const title = k.add([
       k.text("HYPERS DRIVE", {
         font: "M23",
@@ -139,6 +174,11 @@ export function startGame(gameSettings?: Partial<Settings>) {
 
     // Event callback handlers
     k.onKeyPress("enter", () => {
+      k.get("star").forEach((star) => {
+        star.onUpdate(() => {
+          star.pos.x -= randNum(1, settings.SPEED * 1.5);
+        });
+      });
       k.go("game");
     });
   });
@@ -200,7 +240,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
     ]);
 
     // Generate random stars
-    k.loop(.08, () => {
+    k.loop(0.08, () => {
       const star = k.add([
         "star",
         k.circle(randNum(1, 2)),
@@ -210,6 +250,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
         k.opacity(randNum(1, 5) / 10),
         k.offscreen({ destroy: true }),
         k.z(Z.stars),
+        k.stay(),
       ]);
       star.onUpdate(() => {
         star.pos.x -= randNum(settings.SPEED * 1.2, settings.SPEED * 1.5);
@@ -434,10 +475,10 @@ export function startGame(gameSettings?: Partial<Settings>) {
       if (isBlastingOff) {
         return;
       }
-      isTweening = false;
       playerSpeedTween.cancel();
       speedStatTween.cancel();
       speedTween.cancel();
+      isTweening = false;
       settings.SPEED = SPEED;
       stats.update("SPEED", formatSpeed(basePlayerSpeed));
     });
