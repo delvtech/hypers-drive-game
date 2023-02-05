@@ -15,16 +15,16 @@ import BezierEasing from "bezier-easing";
 function initSettings(settings?: Partial<Settings>): Settings {
   return {
     GRAVITY: 1750,
-    JUMP_FORCE: 600,
+    JUMP_FORCE: 550,
     FALLING_VELOCITY: 600,
     SPEED: 5,
     FINAL_SPEED: 15,
     TIME_TO_HYPERDRIVE: 20,
-    MIN_GAP: 150,
+    MIN_GAP: 180,
     MAX_GAP: 400,
     DEVIATION: 90,
     DEVIATION_COOLDOWN: 1,
-    TIC_RATE: .8,
+    TIC_RATE: 0.7,
     EVENT_CHANCE: 100,
     ADD_TRADE_CHANCE: 50,
     ADD_LIQUIDITY_CHANCE: 25,
@@ -33,13 +33,20 @@ function initSettings(settings?: Partial<Settings>): Settings {
   };
 }
 
-const SPEED_OF_LIGHT = 671_000_000; // mph
+export const Z = {
+  stars: 0,
+  bars: 5,
+  player: 10,
+  hud: 15,
+};
+
+const SPEED_OF_LIGHT = 186_000; // mi/s
 const WARP_SPEED = SPEED_OF_LIGHT * 2;
 
 export function startGame(gameSettings?: Partial<Settings>) {
   // Create kaboom instance
   const k = kaboom({
-    background: [20, 20, 20],
+    background: [20, 22, 30],
   });
 
   // Calculate once and reuse
@@ -73,7 +80,17 @@ export function startGame(gameSettings?: Partial<Settings>) {
   k.loadFont("HardDrive", "/hard-drive.ttf");
 
   // Load sprites
-  k.loadSprite("bird", "/bird.png");
+  k.loadSprite("player", "/car-driving.png", {
+    sliceX: 3,
+    anims: {
+      drive: {
+        from: 0,
+        to: 2,
+        loop: true,
+        speed: 48,
+      },
+    },
+  });
   k.loadSprite("ryanGosling", "./ryan_gosling_drive_movie_ascii_art.png");
 
   // Scenes
@@ -81,7 +98,42 @@ export function startGame(gameSettings?: Partial<Settings>) {
   //////////////////////////////////////////////////////////////////////////////
   // START
   //////////////////////////////////////////////////////////////////////////////
+
   k.scene("start", () => {
+    // Generate random stars
+    for (let i = 0; i < 100; i++) {
+      const star = k.add([
+        "star",
+        k.circle(randNum(1, 2)),
+        k.pos(randNum(0, gameWidth), randNum(0, gameHeight)),
+        k.anchor("left"),
+        k.color(255, 255, 255),
+        k.opacity(randNum(2, 6) / 10),
+        k.offscreen({ destroy: true }),
+        k.z(Z.stars),
+        k.stay(),
+      ]);
+      star.onUpdate(() => {
+        star.pos.x -= randNum(0.2, 1);
+      });
+    }
+    k.loop(0.5, () => {
+      const star = k.add([
+        "star",
+        k.circle(randNum(1, 2)),
+        k.pos(gameWidth, randNum(0, gameHeight)),
+        k.anchor("left"),
+        k.color(255, 255, 255),
+        k.opacity(randNum(2, 6) / 10),
+        k.offscreen({ destroy: true }),
+        k.z(Z.stars),
+        k.stay(),
+      ]);
+      star.onUpdate(() => {
+        star.pos.x -= randNum(0.2, 1);
+      });
+    });
+
     const title = k.add([
       k.text("HYPERS DRIVE", {
         font: "M23",
@@ -122,6 +174,11 @@ export function startGame(gameSettings?: Partial<Settings>) {
 
     // Event callback handlers
     k.onKeyPress("enter", () => {
+      k.get("star").forEach((star) => {
+        star.onUpdate(() => {
+          star.pos.x -= randNum(1, settings.SPEED * 1.5);
+        });
+      });
       k.go("game");
     });
   });
@@ -137,30 +194,8 @@ export function startGame(gameSettings?: Partial<Settings>) {
     k.setGravity(GRAVITY);
 
     // Reset and add the event feed
-    k.add(eventFeed.container);
     eventFeed.clear();
-
-    // Set a base player speed based on the SPEED setting. The player speed
-    // represents the speed at which the player is moving through space. At the
-    // base speed, only the background actually moves on the canvas.
-    const basePlayerSpeed = SPEED * 100_000; // mph
-
-    // Add a list of stats
-    const stats = new Stats(
-      k,
-      [
-        ["LIQUIDITY", storage.liquidity],
-        ["LONGS", storage.longsVolume],
-        ["SHORTS", storage.shortsVolume],
-        ["VOLUME", storage.totalVolume],
-        ["SCORE", storage.score],
-        ["SPEED", commify(basePlayerSpeed)],
-      ],
-      {
-        x: 20,
-        y: 20,
-      }
-    );
+    k.add(eventFeed.container);
 
     // Add boundaries. If the player hits a boundary, it's game over.
     k.add([
@@ -195,7 +230,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
     ]);
 
     // Add the blastoff point. When the player reaches the blastoff point, they
-    // engage hyperdrive and fly off screen at light speed.
+    // engage hyperdrive and fly off screen at FTL speeds.
     const blastoff = k.add([
       "blastoff",
       k.rect(0, gameHeight),
@@ -204,10 +239,28 @@ export function startGame(gameSettings?: Partial<Settings>) {
       k.area(),
     ]);
 
+    // Generate random stars
+    k.loop(0.08, () => {
+      const star = k.add([
+        "star",
+        k.circle(randNum(1, 2)),
+        k.pos(gameWidth, randNum(0, gameHeight)),
+        k.anchor("left"),
+        k.color(255, 255, 255),
+        k.opacity(randNum(1, 5) / 10),
+        k.offscreen({ destroy: true }),
+        k.z(Z.stars),
+        k.stay(),
+      ]);
+      star.onUpdate(() => {
+        star.pos.x -= randNum(settings.SPEED * 1.2, settings.SPEED * 1.5);
+      });
+    });
+
     // Add the player and define it's starting x position
     const startingPlayerX = gameWidth / 5;
     const player = k.add([
-      k.sprite("bird"),
+      k.sprite("player"),
       k.pos(startingPlayerX, 80),
       k.anchor("center"),
       k.area(),
@@ -215,11 +268,68 @@ export function startGame(gameSettings?: Partial<Settings>) {
         // @ts-ignore
         maxVel: FALLING_VELOCITY,
       }),
+      k.z(Z.player),
     ]);
+    player.play("drive");
+
+    // Set a base player speed that represents the speed at which the player is
+    // moving through space. At the base speed, only the background actually
+    // moves on the canvas.
+    const basePlayerSpeed = 125; // mi/s
+
+    // Establish a speed the player will reach before engaging hyperdrive.
+    const finalPlayerSpeed = 2_777; // mph
+
+    // Add a list of stats
+    const stats = new Stats(
+      k,
+      [
+        ["LIQUIDITY", storage.liquidity],
+        ["LONGS", storage.longsVolume],
+        ["SHORTS", storage.shortsVolume],
+        ["VOLUME", storage.totalVolume],
+        ["SCORE", storage.score],
+        ["SPEED", commify(basePlayerSpeed)],
+      ],
+      {
+        x: 20,
+        y: 20,
+      }
+    );
+
+    let accelerateTween: TweenController;
 
     // Jump control which increases the score and shows a "+fees" message.
     const jumpControl = k.onKeyPress("space", () => {
+      // Make the player jump upward
       player.jump(JUMP_FORCE);
+
+      // Tween the angle of the car
+      accelerateTween?.cancel();
+      accelerateTween = k.tween(
+        0,
+        -10,
+        0.15,
+        (angle) => {
+          // @ts-ignore
+          player.angle = angle;
+        },
+        k.easings.easeOutSine
+      );
+      k.wait(0.15, () => {
+        accelerateTween?.cancel();
+        accelerateTween = k.tween(
+          -10,
+          0,
+          0.25,
+          (angle) => {
+            // @ts-ignore
+            player.angle = angle;
+          },
+          k.easings.easeInOutSine
+        );
+      });
+
       const feesText = k.add([
         k.text("+Fees", {
           size: 24,
@@ -227,8 +337,11 @@ export function startGame(gameSettings?: Partial<Settings>) {
         k.pos(gameWidth - 100, 100),
         k.anchor("center"),
       ]);
+
+      // increase score and update stat object
       storage.score = storage.score + 10;
       stats.update("SCORE", storage.score);
+
       k.wait(0.5, () => {
         k.destroy(feesText);
       });
@@ -240,7 +353,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
     });
 
     // Track the number of ticks without a trade event.
-    let ticksWithoutTrades = DEVIATION_COOLDOWN;
+    let noTradeTickCountdown = DEVIATION_COOLDOWN;
 
     // Event loop
     const eventController = k.loop(TIC_RATE, () => {
@@ -263,28 +376,28 @@ export function startGame(gameSettings?: Partial<Settings>) {
           trades.add(
             eventAmount,
             type,
-            ticksWithoutTrades ? DEVIATION : undefined
+            noTradeTickCountdown ? DEVIATION : undefined
           );
           eventFeed.add(
             `${type === "LONG" ? "Long" : "Short"} added: ${eventAmount}`
           );
 
           // reset the deviation cooldown
-          ticksWithoutTrades = DEVIATION_COOLDOWN;
+          noTradeTickCountdown = DEVIATION_COOLDOWN;
           return;
 
         case "ADD_LIQUIDITY":
           storage.addLiquidity(eventAmount);
           stats.update("LIQUIDITY", storage.liquidity);
           eventFeed.add(`+${eventAmount} liquidity`);
-          ticksWithoutTrades = Math.max(0, ticksWithoutTrades - 1);
+          noTradeTickCountdown = Math.max(0, noTradeTickCountdown - 1);
           return;
 
         case "REMOVE_LIQUIDITY":
           storage.removeLiquidity(eventAmount);
           stats.update("LIQUIDITY", storage.liquidity);
           eventFeed.add(`-${eventAmount} liquidity`);
-          ticksWithoutTrades = Math.max(0, ticksWithoutTrades - 1);
+          noTradeTickCountdown = Math.max(0, noTradeTickCountdown - 1);
       }
     });
 
@@ -295,8 +408,15 @@ export function startGame(gameSettings?: Partial<Settings>) {
     let playerSpeedTween: TweenController;
     let currentPlayerSpeed = basePlayerSpeed;
 
+    let isTweening = false;
+
     // Tween speeds
     function startTweening() {
+      if (isTweening) {
+        return;
+      }
+      isTweening = true;
+
       // Derive the duration of the tween from the distance between the player's
       // current and final position. The closer the player is to the final
       // position, the less time it takes to speed up.
@@ -308,10 +428,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
         0
       );
 
-      // Establish a speed the player will reach before engaging hyperdrive.
-      const finalPlayerSpeed = 10_000_000; // mph
-
-      // Tween the speed setting to affect the movement of background objects.
+      // Tween the SPEED setting to affect the movement of background objects.
       speedTween = k.tween(
         SPEED,
         FINAL_SPEED,
@@ -344,31 +461,46 @@ export function startGame(gameSettings?: Partial<Settings>) {
         },
         k.easings.easeInCubic
       );
+      // });
     }
 
     // Start tweening immediately
     startTweening();
 
+    // keep track of when blastoff starts
+    let isBlastingOff = false;
+
     // Stop tweening when the player hits a bar.
     player.onCollide("bar", () => {
+      if (isBlastingOff) {
+        return;
+      }
       playerSpeedTween.cancel();
       speedStatTween.cancel();
       speedTween.cancel();
+      isTweening = false;
+      settings.SPEED = SPEED;
       stats.update("SPEED", formatSpeed(basePlayerSpeed));
     });
 
-    // Start tweening again after the play clears the bar.
+    // Start tweening again after the player clears the bar.
     player.onCollideEnd("bar", () => {
       startTweening();
     });
 
     // End the game when the player hits an obstacle.
     player.onCollide("obstacle", () => {
+      // Ignore the obstacles when blasting off
+      if (isBlastingOff) {
+        return;
+      }
       k.go("gameover");
     });
 
     // Engage hyperdrive when the player hits the blastoff point.
     player.onCollide("blastoff", () => {
+      isBlastingOff = true;
+
       // Stop tweening
       speedTween.cancel();
       playerSpeedTween.cancel();
@@ -392,19 +524,37 @@ export function startGame(gameSettings?: Partial<Settings>) {
 
       // Set the top speed to FTL for hyperspace.
       storage.topSpeed = WARP_SPEED;
+      // stats.update("SPEED", `${formatSpeed(WARP_SPEED)}!!!`);
+      currentPlayerSpeed = WARP_SPEED;
+
+      // Tween the SPEED setting to make background objects speed up.
+      k.tween(
+        settings.SPEED,
+        settings.SPEED * 20,
+        0.4,
+        (speed) => {
+          settings.SPEED = speed;
+        },
+        BezierEasing(1, -0.1, 1, 0)
+      );
+      k.tween(
+        settings.SPEED,
+        settings.SPEED * 100,
+        0.6,
+        (speed) => {
+          settings.SPEED = speed;
+        },
+        k.easings.easeInCubic
+      );
 
       // Make the player move back slightly before suddenly blasting off.
-      playerSpeedTween = k.tween(
+      k.tween(
         player.pos.x,
         finalPlayerX + 100,
         0.4,
         (x) => (player.pos.x = x),
         BezierEasing(0.6, -1, 0.8, -0.3)
       );
-
-      k.wait(0.2, () => {
-        stats.update("SPEED", `${formatSpeed(WARP_SPEED)} mph`);
-      });
 
       // End the game
       k.wait(1, () => k.go("gameover"));
@@ -443,7 +593,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
       }
     );
 
-    k.add([
+    const highScoreObj = k.add([
       k.text(`HIGH SCORE: ${localStorage.highScore}`, {
         size: 18,
       }),
@@ -451,9 +601,20 @@ export function startGame(gameSettings?: Partial<Settings>) {
       k.anchor("center"),
     ]);
 
+    k.add([
+      k.text("Press ESC to return to the start menu", {
+        size: 20,
+      }),
+      k.pos(gameWidth / 2, highScoreObj.pos.y + 100),
+      k.anchor("center"),
+    ]);
+
     // Event callback handlers
     k.onKeyPress("enter", () => {
       k.go("game");
+    });
+    k.onKeyPress("escape", () => {
+      k.go("start");
     });
   });
 
@@ -463,5 +624,5 @@ export function startGame(gameSettings?: Partial<Settings>) {
 }
 
 function formatSpeed(speed: number) {
-  return speed === WARP_SPEED ? `Warp Speed!` : `${commify(speed, 0)} mph`;
+  return speed === WARP_SPEED ? `Warp Speed!` : `${commify(speed, 0)} mi/s`;
 }

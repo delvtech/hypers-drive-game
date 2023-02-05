@@ -1,6 +1,7 @@
 import { KaboomCtx } from "kaboom";
 import { background } from "./comps";
 import { Settings } from "../settings";
+import { Z } from "../game";
 
 interface BarOptions {
   k: KaboomCtx;
@@ -21,6 +22,7 @@ export function Bar({ k, settings, position, size, color }: BarOptions) {
     k.pos(k.width(), position === "top" ? 0 : k.height()),
     k.color(...(color as [number, number, number])),
     k.offscreen({ destroy: true }),
+    k.z(Z.bars),
     background(settings),
   ]);
 }

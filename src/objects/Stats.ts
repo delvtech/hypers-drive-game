@@ -7,8 +7,9 @@ import {
   ZComp,
 } from "kaboom";
 import { commify } from "../utils";
+import { Z } from "../game";
 
-export type Stat<S extends string> = [S, string | number];
+export type Stat<L extends string> = [L, string | number];
 
 export interface StatsOptions {
   alignment?: "left" | "center" | "right";
@@ -16,11 +17,11 @@ export interface StatsOptions {
   y?: number;
 }
 
-export class Stats<S extends string = string> {
+export class Stats<L extends string = string> {
   public container: GameObj<PosComp | AnchorComp | ZComp>;
-  private statsByLabel: Record<S, StatStorage>;
+  private statsByLabel: Record<L, StatStorage>;
 
-  constructor(k: KaboomCtx, stats: Stat<S>[], options?: StatsOptions) {
+  constructor(k: KaboomCtx, stats: Stat<L>[], options?: StatsOptions) {
     let anchor: Parameters<typeof k.anchor>[0];
 
     switch (options?.alignment) {
@@ -40,7 +41,7 @@ export class Stats<S extends string = string> {
     this.container = k.add([
       k.pos(options?.x ?? 0, options?.y ?? 0),
       k.anchor(anchor),
-      k.z(10),
+      k.z(Z.hud),
     ]);
 
     this.statsByLabel = Object.fromEntries(
@@ -59,28 +60,28 @@ export class Stats<S extends string = string> {
           },
         ];
       })
-    ) as Record<S, StatStorage>;
+    ) as Record<L, StatStorage>;
   }
 
   public get objects(): StatObj[] {
     return this.container.children as StatObj[];
   }
 
-  public update(label: S, newValue: string | number) {
+  public update(label: L, newValue: string | number) {
     const statObj = this.statsByLabel[label]?.obj;
     if (statObj) {
       statObj.text = formatStat(label, newValue);
     }
   }
 
-  public reset(label?: S) {
+  public reset(label?: L) {
     if (label) {
       this.update(label, this.statsByLabel[label]?.initialValue);
     } else {
       for (const [label, stat] of Object.entries<StatStorage>(
         this.statsByLabel
       )) {
-        this.update(label as S, stat.initialValue);
+        this.update(label as L, stat.initialValue);
       }
     }
   }
