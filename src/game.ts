@@ -8,6 +8,7 @@ import { Events } from "./Events";
 import { EventFeed } from "./objects/EventFeed";
 import { Trades } from "./objects/Trades";
 import BezierEasing from "bezier-easing";
+import { AudioManager } from "./AudioManager";
 
 /**
  * Add default settings to a partial settings object
@@ -47,6 +48,8 @@ export function startGame(gameSettings?: Partial<Settings>) {
   // Create kaboom instance
   const k = kaboom({
     background: [20, 22, 30],
+    // play music outside of focus
+    backgroundAudio: true,
   });
 
   // Calculate once and reuse
@@ -69,13 +72,14 @@ export function startGame(gameSettings?: Partial<Settings>) {
 
   // Initiate helper classes
   const storage = new GameStorage();
+  const audioManger = new AudioManager(k);
   const events = new Events(settings);
 
   // Initiate reusable object classes outside the scenes
   const eventFeed = new EventFeed(k);
   const trades = new Trades(k, storage, settings);
 
-  // // Load fonts
+  // Load fonts
   k.loadFont("M23", "/m23.TTF");
   k.loadFont("HardDrive", "/hard-drive.ttf");
 
@@ -91,7 +95,8 @@ export function startGame(gameSettings?: Partial<Settings>) {
       },
     },
   });
-  k.loadSprite("ryanGosling", "./ryan_gosling_drive_movie_ascii_art.png");
+  k.loadSprite("bird", "/bird.png");
+  k.loadSprite("ryanGosling", "/ryan_gosling_drive_movie_ascii_art.png");
 
   // Scenes
 
@@ -172,6 +177,11 @@ export function startGame(gameSettings?: Partial<Settings>) {
       } as PatchedBodyCompOpt),
     ]);
 
+    audioManger.startMusic("StartMusic", {
+      loop: true,
+      volume: 0.01,
+    });
+
     // Event callback handlers
     k.onKeyPress("enter", () => {
       k.get("star").forEach((star) => {
@@ -187,6 +197,8 @@ export function startGame(gameSettings?: Partial<Settings>) {
   // GAME
   //////////////////////////////////////////////////////////////////////////////
   k.scene("game", () => {
+    audioManger.stopMusic("StartMusic");
+
     // Reset storage to default state
     storage.reset();
 
@@ -330,6 +342,10 @@ export function startGame(gameSettings?: Partial<Settings>) {
         );
       });
 
+      k.play("JumpSound", {
+        volume: 0.01,
+      });
+      
       const feesText = k.add([
         k.text("+Fees", {
           size: 24,
