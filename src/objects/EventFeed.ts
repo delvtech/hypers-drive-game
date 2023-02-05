@@ -1,4 +1,5 @@
 import { AnchorComp, GameObj, KaboomCtx, PosComp, ZComp } from "kaboom";
+import { Z } from "../game";
 
 export interface EventFeedOptions {
   /**
@@ -27,7 +28,7 @@ export class EventFeed {
     this.container = k.add([
       k.pos(20, k.height() - 20),
       k.anchor("botleft"),
-      k.z(10),
+      k.z(Z.hud),
     ]);
   }
 
