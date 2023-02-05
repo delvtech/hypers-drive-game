@@ -593,11 +593,19 @@ export function startGame(gameSettings?: Partial<Settings>) {
       }
     );
 
-    k.add([
+    const highScoreObj = k.add([
       k.text(`HIGH SCORE: ${localStorage.highScore}`, {
         size: 18,
       }),
       k.pos(gameWidth / 2, stats.bottomY() + 40),
+      k.anchor("center"),
+    ]);
+
+    k.add([
+      k.text("Press ESC to return to the start menu", {
+        size: 20,
+      }),
+      k.pos(gameWidth / 2, highScoreObj.pos.y + 100),
       k.anchor("center"),
     ]);
 
