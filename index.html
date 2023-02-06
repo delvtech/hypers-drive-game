@@ -4,10 +4,572 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HYPERS GAME</title>
+    <title>HYPERDRIVE DOCS</title>
   </head>
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Teko:wght@300;500;700&display=swap"
+  />
+  <style>
+    @font-face {
+      font-family: "M23";
+      src: url(m23.ttf);
+    }
+
+    @font-face {
+      font-family: "Hard Drive";
+      src: url(hard-drve.ttf);
+    }
+
+    @font-face {
+      font-family: "Teko";
+      src: url("https://fonts.googleapis.com/css2?family=Teko:wght@300;500;700&display=swap");
+    }
+
+    h1 {
+      font-family: "M23";
+      font-size: 64px;
+    }
+
+    h2 {
+      font-family: "M23";
+      font-size: 32px;
+    }
+
+    p {
+      font-size: 16px;
+      font-family: "Teko", sans-serif;
+    }
+
+    #game-canvas {
+      width: 100vw;
+      height: 500px;
+    }
+
+    #doc {
+      max-width: 960px;
+      margin: 0 auto;
+      height: 100%;
+    }
+  </style>
   <body>
-    <div id="app"></div>
+    <div
+      id="doc"
+      class="markdown-body container-fluid comment-enabled comment-inner"
+      data-hard-breaks="true"
+    >
+      <h1 id="Hyperdrive" data-id="Hyperdrive"><span>Hyperdrive</span></h1>
+      <p>
+        <span class="ui-comment-inline-span">Hyperdrive</span
+        ><span>
+          is the next research leap from the Element Finance team on variable
+          and fixed rate primitives. </span
+        ><em
+          ><span
+            >No preset expiration dates, no fragmented liquidity, and no LP
+            rollovers, aka everlasting liquidity</span
+          ><span class="ui-comment-inline-span"
+            ><span class="ui-comment-inline-span">.</span></span
+          ></em
+        >
+      </p>
+
+      <canvas id="game-canvas"></canvas>
+
+      <h2 id="A-New-Way-To-Trade-Rates" data-id="A-New-Way-To-Trade-Rates">
+        <span>A New Way To Trade Rates</span>
+      </h2>
+      <p>
+        <span
+          >The Hyperdrive AMM introduces a market sentiment indicator (MSI) for
+          DeFi interest rates. Almost all DeFi interest rates are constantly
+          changing (</span
+        ><a
+          href="https://github.com/element-fi/robrox/pull/6"
+          target="_blank"
+          rel="noopener"
+          ><span>sometimes by the block</span></a
+        ><span
+          >). In order to gauge market sentiment, a balanced system of </span
+        ><span class="ui-comment-inline-span"
+          ><span class="ui-comment-inline-span">longs and shorts</span></span
+        ><span>
+          must exist between fixed and variable rates, in order to capture the
+          wisdom of the crowd. Hyperdrive provides this. The fixed rate
+          represented in Hyperdrive is the market sentiment indicator.</span
+        >
+      </p>
+      <p>
+        <span>Hyperdrive lets users </span
+        ><span class="ui-comment-inline-span">short or long</span
+        ><span>
+          the sentiment indicator. If a user thinks the sentiment indicator is
+          too high, they'll </span
+        ><span class="ui-comment-inline-span">go long</span
+        ><span>
+          because they like the fixed rate. If they think it is too low, they </span
+        ><span class="ui-comment-inline-span">go short</span
+        ><span> because they like the variable rate.</span>
+      </p>
+      <p><span>Which side are you on?</span></p>
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align: center">
+              <img
+                src="https://i.imgur.com/Bz1Ug6R.png"
+                alt=""
+                loading="lazy"
+              />
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="text-align: center">
+              <strong
+                ><span
+                  >Economists, they've made total fools out of us</span
+                ></strong
+              >
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <h2 id="Overview" data-id="Overview"><span>Overview</span></h2>
+      <p>
+        <span
+          >In the sections below, we describe what Hyperdrive brings to the DeFi
+          space:</span
+        >
+      </p>
+      <ol>
+        <li><span>Terms on Demand</span></li>
+        <li><span>Consolidated and Everlasting liquidity</span></li>
+        <li><span>Longs and Shorts to Determine Market Sentiment</span></li>
+        <li>
+          <span>Trading Strategies</span>
+          <ul>
+            <li><span>LPs Benefit From Volatility Harvesting</span></li>
+            <li><span>Interest Rate Arbitrage</span></li>
+            <li><span>Fixed Rate Borrow</span></li>
+            <li><span>Multiplied Variable Rate Exposure</span></li>
+            <li><span>Spread Borrow</span></li>
+          </ul>
+        </li>
+      </ol>
+      <h3 id="1-Terms-On-Demand" data-id="1-Terms-On-Demand">
+        <span>1. Terms On Demand</span>
+      </h3>
+      <p>
+        <span
+          >Hyperdrive removes the concept of preset start and end dates. Rates
+          are traded for a fixed period of time, known as the </span
+        ><a
+          href="https://en.wikipedia.org/wiki/Bond_(finance)#The_term_of_the_bond"
+          target="_blank"
+          rel="noopener"
+          ><span>term</span></a
+        ><span>. When a user chooses to trade on variable or fixed rates, </span
+        ><span class="ui-comment-inline-span"
+          >the user starts their term, e.g. 6 months, on demand.</span
+        >
+      </p>
+      <p>
+        <span
+          >The fixed rate in these terms is the market sentiment indicator
+          reflecting the market's expected average variable rates over the term
+          length on an underlying yield source, </span
+        ><span class="ui-comment-inline-span">like stEth</span><span>.</span>
+      </p>
+      <p>
+        <span
+          >Previously, a user would be forced to pick a variable or fixed rate
+          market with a term set </span
+        ><span class="ui-comment-inline-span">to a specific maturity date</span
+        ><span>. This trends towards suboptimal LP fees and </span
+        ><span class="ui-comment-inline-span">UX</span
+        ><span
+          >. For example, users likely do not have a lot of demand to trade on
+          terms that have only 1 week remaining, because gains are lower. LPs
+          tend to be incentivized to be in new terms, since fees are
+          higher.</span
+        >
+      </p>
+      <h3
+        id="2-Consolidated-and-Everlasting-Liquidity"
+        data-id="2-Consolidated-and-Everlasting-Liquidity"
+      >
+        <span>2. Consolidated and </span
+        ><span class="ui-comment-inline-span"
+          ><span class="ui-comment-inline-span">Everlasting</span></span
+        ><span> Liquidity</span>
+      </h3>
+      <p>
+        <span
+          >Previously, 6 month terms were deployed in a staggered manner. These
+          staggered deployments lead to fragmented liquidity and required LPs to
+          actively manage their position, such as rolling over their capital
+          between different terms.</span
+        >
+      </p>
+      <p>
+        <span
+          >In Hyperdrive, terms are created on demand using the liquidity from a
+          single pool. As a result, liquidity provision is no longer tied to a
+          specific term. When a user provides liquidity, they do so for all
+          future terms created from the pool. Their liquidity has no expiration.
+          It is everlasting. The LP continues to collect fees on each trade as
+          well as variable interest on unallocated capital, for as long as they
+          wish.</span
+        >
+      </p>
+      <h3
+        id="3-Longs-and-Shorts-to-Determine-Market-Sentiment"
+        data-id="3-Longs-and-Shorts-to-Determine-Market-Sentiment"
+      >
+        <span>3. Longs and Shorts to Determine Market Sentiment</span>
+      </h3>
+      <p>
+        <span
+          >The Hyperdrive AMM gives users the ability to open both long and
+          short positions on the market sentiment indicator, aka fixed
+          rate.</span
+        >
+      </p>
+      <ul>
+        <li>
+          <span>When a user is confident that</span
+          ><span class="ui-comment-inline-span">
+            market sentiment for rates is </span
+          ><strong><span class="ui-comment-inline-span">too high</span></strong
+          ><span>, they'd want to </span><strong><span>long</span></strong
+          ><span> the fixed rate, as they believe it is </span
+          ><strong><span>higher</span></strong
+          ><span>
+            than their expectation of the variable rate for the term. This
+            drives the fixed rate down.</span
+          >
+        </li>
+        <li>
+          <span
+            >When a user is confident that market sentiment for rates is </span
+          ><strong><span>too low</span></strong
+          ><span>, they'd want to to </span><strong><span>short</span></strong
+          ><span> the fixed rate, as they believe it is </span
+          ><strong><span>lower</span></strong
+          ><span>
+            than their expectation of the variable rate for the term. This
+            drives the fixed rate up.</span
+          >
+        </li>
+      </ul>
+      <p>
+        <span
+          >Since Hyperdrive facilitates both longs and shorts, it fully captures
+          market sentiment, letting the fixed rate reflect the market's
+          beliefs.</span
+        >
+      </p>
+      <p>
+        <span
+          >Hyperdrive's approach doesn't require the use of funding rates or
+          liquidation engines to remain solvent through volatile market
+          conditions. Instead, all of the accounting and mathematics required to
+          keep the system safe are baked into the AMM itself.</span
+        >
+      </p>
+      <p>
+        <span
+          >This creates a symmetrical market where users can drive the rates up
+          and down as market sentiment changes, just like a game of </span
+        ><span class="ui-comment-inline-span"
+          ><span class="ui-comment-inline-span"
+            ><span class="ui-comment-inline-span">flappy bird</span></span
+          ></span
+        ><span>.</span>
+      </p>
+      <p>
+        <img
+          src="https://i.imgur.com/W9QVOam.png"
+          alt="Flappy Bird"
+          loading="lazy"
+        />
+      </p>
+      <h3 id="4-Trading-Strategies" data-id="4-Trading-Strategies">
+        <span>4. Trading Strategies</span>
+      </h3>
+      <h4
+        id="A-LPs-Benefit-From-Volatility-Harvesting"
+        data-id="A-LPs-Benefit-From-Volatility-Harvesting"
+      >
+        <span>A. LPs Benefit From Volatility Harvesting</span>
+      </h4>
+      <blockquote>
+        <p>
+          <span
+            >Every user trade is met with an equal and opposite LP trade</span
+          >
+        </p>
+        <ul>
+          <li><span>Sir Isaac Newton</span></li>
+        </ul>
+      </blockquote>
+      <p>
+        <span
+          >For every trade that happens on the AMM, the LP takes on the other
+          side. This means the LP will generally hold a position that is
+          opposite to the </span
+        ><span class="ui-comment-inline-span">market sentiment</span
+        ><span
+          >. Whether the market is right or wrong, all trades pay fees to the LP
+          holders.</span
+        >
+      </p>
+      <p>
+        <span>Rates volatility attracts more trading, more fees, and more </span
+        ><span class="ui-comment-inline-span"
+          ><span class="ui-comment-inline-span"
+            ><span class="ui-comment-inline-span"
+              ><span class="ui-comment-inline-span"
+                ><span class="ui-comment-inline-span"
+                  ><span class="ui-comment-inline-span">s</span></span
+                ></span
+              ></span
+            ></span
+          ></span
+        ><span>peculative activity from traders.</span>
+      </p>
+      <p>
+        <span
+          >No matter the volatility, at the end of a term, the average variable
+          rate for that term is a single number. Any trading that moves the
+          fixed rate away from this number represents an inaccurate market
+          prediction, which the LP takes the other side of, thereby
+          profiting.</span
+        >
+      </p>
+      <h4 id="B-Interest-Rate-Arbitrage" data-id="B-Interest-Rate-Arbitrage">
+        <span>B. I</span
+        ><span class="ui-comment-inline-span">nterest Rate Arbitrage</span>
+      </h4>
+      <p>
+        <span
+          >Hyperdrive's long/short mechanism allows for arbitrageurs to reap the
+          benefit of volatile changes in interest rates.</span
+        >
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align: center"><span>LOG(DSR_RATE)</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="text-align: center">
+              <img
+                src="https://i.imgur.com/rCmFheb.png"
+                alt=""
+                loading="lazy"
+              />
+            </td>
+          </tr>
+          <tr>
+            <td style="text-align: center">
+              <code
+                >chifra state --call "0x197E90f9FAD81970bA7976f33CbD77088E5D7cf7
+                | dsr()(uint)" --file blocks.txt --no_header | awk '$5 ~
+                /^[1-9]/ { printf "%.0f,%f\n", $1, ((($5 / 10^27
+                )^(60*60*24*365)-1) * 100)}' &gt; dsr_rates.txt</code
+              >
+            </td>
+          </tr>
+          <tr>
+            <td style="text-align: center">
+              <code
+                >jp &lt; /code/trueblocks-sdk/python/dsr_rates_log.txt -input
+                csv -xy '[*][1,3]'</code
+              >
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        <span>As can be seen in this graph generated by </span
+        ><a href="https://trueblocks.io/" target="_blank" rel="noopener"
+          ><span>trueblocks</span></a
+        ><span>, MakerDAO's </span
+        ><span class="ui-comment-inline-span">DSR</span
+        ><span>
+          follows a stepwise function. As the Stability Fee is changed, this
+          allows for traders to quickly arbitrage the market sentiment to
+          converge on the new rate.</span
+        >
+      </p>
+      <h4 id="C-Fixed-Rate-Borrow" data-id="C-Fixed-Rate-Borrow">
+        <span>C. Fixed Rate Borrow</span>
+      </h4>
+      <p>
+        <span
+          >On lending protocols, borrowers pay a variable rate to lenders,
+          representing a significant source of uncertainty in DeFi trading
+          strategies. The trader suffers from having to pay </span
+        ><span class="ui-comment-inline-span"
+          ><span class="ui-comment-inline-span"
+            >more interest cost when rates rise</span
+          ></span
+        ><span>.</span>
+      </p>
+      <p>
+        <span
+          >To manage this risk, they can open a short position on Hyperdrive,
+          which inherently gives them exposure to the variable rate for a fixed
+          cost.</span
+        >
+      </p>
+      <p>
+        <span
+          >Users historically have a significantly higher threshold on the
+          borrow rate they are willing to pay if they can secure a fixed vs.
+          variable position. This is seen on the AAVE fixed rate market. This
+          creates a larger spread between fixed and variable rates, introducing
+          arbitrage opportunities.</span
+        >
+      </p>
+      <h4
+        id="D-Multiplied-Variable-Rate-Exposure"
+        data-id="D-Multiplied-Variable-Rate-Exposure"
+      >
+        <span>D. Multiplied Variable Rate Exposure</span>
+      </h4>
+      <p>
+        <span>Hyperdrive allows users to get </span
+        ><span class="ui-comment-inline-span"
+          >as much variable exposure as they want</span
+        ><span>
+          by letting them borrow additional capital from the AMM at the current
+          fixed rate and use it to open a short position.</span
+        >
+      </p>
+      <p>
+        <span
+          >By opening a short position, the user is buying the variable yield
+          from the market's deployed assets. Users can buy interest on a higher
+          amount of capital than they provide. There are no liquidations, they
+          just provide a maximum loss to ensure protocol safety. </span
+        ><span class="ui-comment-inline-span">Unlike every other market</span
+        ><span
+          >, a Hyperdrive short does not face the possibility of unlimited
+          loss.</span
+        >
+      </p>
+      <p>
+        <span
+          >Because this position earns multiplied variable interest, it provides
+          a stabilizing force encouraging the fixed rate to converge upon
+          changes in the variable rate, </span
+        ><span class="ui-comment-inline-span"
+          >otherwise Interest Rate Arbitrage exists.</span
+        >
+      </p>
+      <h4 id="E-Spread-Borrow" data-id="E-Spread-Borrow">
+        <span>E. Spread Borrow</span>
+      </h4>
+      <p>
+        <span
+          >Hyperdrive users can get multiplied fixed rate exposure and profit
+          from the spread between an asset's borrow rate and the current market
+          sentiment or fixed rate.</span
+        >
+      </p>
+      <p>
+        <span
+          >Long positions on Hyperdrive have a guaranteed fixed rate, which
+          makes them powerful collateral assets, as they allow high
+          loan-to-value borrowing.</span
+        >
+      </p>
+      <p>
+        <span
+          >If a lending platform like MakerDAO charges a 1% rate to borrow DAI
+          against this collateral and market sentiment on Hyperdrive reflects a
+          3% rate, users can profit from this spread by opening a long position
+          on Hyperdrive, collateralizing this position, borrowing DAI against
+          it, and repeating this process recursively until the rates
+          converge.</span
+        >
+      </p>
+      <h2 id="Technical-Teaser" data-id="Technical-Teaser">
+        <span>Technical Teaser</span>
+      </h2>
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align: center">
+              <img
+                src="https://i.imgur.com/aphOgTj.png"
+                alt=""
+                loading="lazy"
+              />
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="text-align: center">
+              <em
+                ><span class="ui-comment-inline-span"
+                  ><span class="ui-comment-inline-span"
+                    ><span class="ui-comment-inline-span"
+                      ><span class="ui-comment-inline-span"
+                        >Shut up and Hyperdrive</span
+                      ></span
+                    ></span
+                  ></span
+                ></em
+              >
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        <span
+          >Hyperdrive is a natural extension of the concepts introduced in the
+          first iteration of the </span
+        ><a href="https://paper.element.fi/" target="_blank" rel="noopener"
+          ><span>Element Protocol</span></a
+        ><span>
+          which implemented a customised version of the constant power sum curve
+          invariant from the foundational </span
+        ><a
+          href="https://yield.is/YieldSpace.pdf"
+          target="_blank"
+          rel="noopener"
+          ><span>YieldSpace</span></a
+        ><span>
+          paper. Optimised for fixed rate trading, this curve's main benefit is
+          curvature that adjusts with the passage of time.</span
+        >
+      </p>
+      <p>
+        <span
+          >Changing curvature of trading curves can be dangerous for protocol
+          safety, as evidenced by the </span
+        ><a
+          href="https://medium.com/@peter_4205/curve-vulnerability-report-a1d7630140ec"
+          target="_blank"
+          rel="noopener"
+          ><span>Curve hack</span></a
+        ><span
+          >. Similar attacks are possible in a multi-curvature multi-term
+          universe. The Hyperdrive solution does away with multiple curves,
+          instead reflecting the passage of time in each position, an approach
+          we're deeming “flat + curve”. Each position is the sum of matured and
+          unmatured portions.</span
+        >
+      </p>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
