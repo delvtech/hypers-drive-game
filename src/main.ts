@@ -1,4 +1,4 @@
-import { startGame } from './game'
-import './style.css'
+import { startGame } from "./game";
+import "./style.css";
 
-startGame()
+startGame();
