@@ -755,7 +755,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
       });
 
       // End the game
-      k.wait(9.5, () => k.go("goodEnding"));
+      k.wait(9, () => k.go("goodEnding"));
     });
 
     k.onKeyPress("escape", () => {
@@ -842,7 +842,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
     // Event callback handlers
     k.onKeyPress("enter", () => {
       k.get("star").forEach((star) => {
-        star.destroy()
+        star.destroy();
       });
       audioManger.stop("HyperdriveSound");
       k.go("start");
