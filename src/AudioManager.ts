@@ -1,7 +1,11 @@
 import { AudioPlay, AudioPlayOpt, KaboomCtx } from "kaboom";
 import { Settings } from "./settings";
 
-type SoundId = "StartMusic" | "JumpSound" | "HyperdriveSound";
+type SoundId =
+  | "StartMusic"
+  | "JumpSound"
+  | "HyperdriveSound"
+  | "GameBackgroundMusic";
 
 interface SoundStorage {
   audioPlay: AudioPlay;
@@ -24,6 +28,7 @@ export class AudioManager {
     this.k.loadSound("StartMusic", "/the-perfect-girl-slowed.mp3");
     this.k.loadSound("JumpSound", "/jump.mp3");
     this.k.loadSound("HyperdriveSound", "/hyperdrive-sound.mp3");
+    this.k.loadSound("GameBackgroundMusic", "/force-field-14688.mp3");
   }
 
   public get audios() {
@@ -36,10 +41,12 @@ export class AudioManager {
 
   public play(soundId: SoundId, options?: AudioPlayOpt) {
     const { volume = 1 } = options || {};
+
     const sound = this.k.play(soundId, {
-      volume: (this.settings.VOLUME / 100) * volume,
       ...options,
+      volume: this.isMuted ? 0 : (this.settings.VOLUME / 100) * volume,
     });
+
     this.SoundToStorage[soundId] = {
       audioPlay: sound,
       volume,
