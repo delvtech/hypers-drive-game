@@ -57,10 +57,6 @@ export function startGame(gameSettings?: Partial<Settings>) {
     canvas,
   });
 
-  // window.addEventListener("load", () => {
-  //   k.width = document.documentElement.clientWidth;
-  // });
-
   // Calculate once and reuse
   const gameWidth = k.width();
   const gameHeight = k.height();
@@ -117,8 +113,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
   });
   k.loadSprite("bird", "/bird.png");
   k.loadSprite("ryanGosling", "/ryan_gosling_drive_movie_ascii_art.png");
-  k.loadSprite("william", "/william.png");
-  k.loadSprite("jonny", "/jonny.png");
+  k.loadSprite("jowillnny", "/jowillnny.png");
 
   // Add volume controls
   const volumeContainer = k.add([
@@ -160,8 +155,8 @@ export function startGame(gameSettings?: Partial<Settings>) {
   // Mute the volume on click of the volume button
   volumeButton.onClick(() => {
     if (audioManger.isMuted) {
-      volumeIcon.play(settings.VOLUME < 50 ? "low" : "high");
       audioManger.unMute();
+      volumeIcon.play(settings.VOLUME < 50 ? "low" : "high");
     } else {
       audioManger.mute();
       volumeIcon.play("mute");
@@ -189,6 +184,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
         k.stay(),
       ]);
       star.onUpdate(() => {
+        // glitchy star effect
         star.pos.x -= randNum(0.2, 1);
       });
     }
@@ -248,7 +244,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
       } as PatchedBodyCompOpt),
     ]);
 
-    audioManger.startMusic("StartMusic", {
+    audioManger.play("StartMusic", {
       loop: true,
     });
 
@@ -259,6 +255,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
           star.pos.x -= randNum(1, settings.SPEED * 1.5);
         });
       });
+      audioManger.stop("StartMusic");
       k.go("game");
     });
   });
@@ -267,8 +264,6 @@ export function startGame(gameSettings?: Partial<Settings>) {
   // GAME
   //////////////////////////////////////////////////////////////////////////////
   k.scene("game", () => {
-    audioManger.stopMusic("StartMusic");
-
     // Reset storage to default state
     storage.reset();
 
@@ -344,7 +339,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
     const player = k.add([
       k.sprite("player"),
       k.pos(startingPlayerX, 80),
-      k.anchor("center"),
+      k.anchor("botleft"),
       k.area(),
       k.body({
         // @ts-ignore
@@ -412,8 +407,8 @@ export function startGame(gameSettings?: Partial<Settings>) {
         );
       });
 
-      k.play("JumpSound", {
-        volume: 0.01,
+      audioManger.play("JumpSound", {
+        volume: 0.05,
       });
 
       const feesText = k.add([
@@ -587,9 +582,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
     player.onCollide("blastoff", () => {
       isBlastingOff = true;
 
-      k.play("HyperdriveSound", {
-        volume: 0.1,
-      });
+      audioManger.play("HyperdriveSound");
 
       // Stop tweening
       speedTween.cancel();
@@ -602,16 +595,10 @@ export function startGame(gameSettings?: Partial<Settings>) {
       // Destroy the blastoff point to allow the player to pass it.
       blastoff.destroy();
 
-      // Stop any current animations the player is doing (e.g., jumping).
-      player.stop();
-
       // Turn off the jump control.
       jumpControl.cancel();
 
-      // Remove the player's gravity to keep it from falling after the jump
-      // control is turned off.
-      player.gravityScale = 0;
-
+      // Remove gravity to keep the player from falling.
       k.setGravity(0);
 
       // Set the top speed to FTL for hyperspace.
@@ -620,13 +607,18 @@ export function startGame(gameSettings?: Partial<Settings>) {
       currentPlayerSpeed = WARP_SPEED;
 
       let warpLineBaseSpeed = 5;
-      let wrapLineBaseWidth = 1;
+      let warpLineBaseWidth = 1;
+      let warpLineHeight = 10;
       let warpLineBaseOpacity = 2;
 
+      // Add blocky lines when hyperdrive is engaging.
       k.loop(0.01, () => {
         const warpLine = k.add([
           "warpLine",
-          k.rect(randNum(wrapLineBaseWidth, wrapLineBaseWidth * 5), 10),
+          k.rect(
+            randNum(warpLineBaseWidth, warpLineBaseWidth * 5),
+            warpLineHeight
+          ),
           k.pos(gameWidth + 100, randNum(0, gameHeight)),
           k.anchor("left"),
           k.color(255, 255, 255),
@@ -650,16 +642,53 @@ export function startGame(gameSettings?: Partial<Settings>) {
         k.easings.easeInCubic
       );
 
-      // Make the player move back slightly before suddenly blasting off.
+      // Move the player back on the canvas to prepare for blast off.
       k.tween(
         player.pos.x,
-        player.pos.x - 600,
+        gameWidth / 5,
         3,
         (x) => (player.pos.x = x),
         k.easings.easeInOutCubic
       );
 
-      k.wait(4, () => {
+      k.wait(2, () => {
+        // Speed the warp lines up
+        k.tween(
+          warpLineBaseSpeed,
+          warpLineBaseSpeed * 5,
+          2,
+          (speed) => {
+            warpLineBaseSpeed = speed;
+          },
+          k.easings.easeInCirc
+        );
+
+        // Shrink the warp line heights
+        k.tween(
+          warpLineHeight,
+          2,
+          3,
+          (height) => {
+            warpLineHeight = height;
+          },
+          k.easings.easeInCirc
+        );
+
+        // Stretch the warp lines
+        k.tween(
+          warpLineBaseWidth,
+          warpLineBaseWidth * 15,
+          2,
+          (width) => {
+            warpLineBaseWidth = width;
+          },
+          k.easings.easeInCirc
+        );
+      });
+
+      // HYPERSPACE
+      k.wait(4.3, () => {
+        // Propel the player forward
         k.tween(
           player.pos.x,
           finalPlayerX + 1000,
@@ -667,15 +696,53 @@ export function startGame(gameSettings?: Partial<Settings>) {
           (x) => (player.pos.x = x),
           k.easings.easeInCubic
         );
+
+        // Angle the player back
+        k.tween(
+          0,
+          -15,
+          0.1,
+          (angle) => {
+            // @ts-ignore
+            player.angle = angle;
+          },
+          k.easings.easeOutCubic
+        );
+
+        // Speed the warp lines up even more!
         k.tween(
           warpLineBaseSpeed,
-          warpLineBaseSpeed * 100,
-          5,
+          warpLineBaseSpeed * 10,
+          0.1,
           (speed) => {
             warpLineBaseSpeed = speed;
           },
-          k.easings.easeInQuad
+          k.easings.easeInCubic
         );
+
+        // Shrink the warp line heights even more!
+        k.tween(
+          warpLineHeight,
+          1,
+          0.1,
+          (height) => {
+            warpLineHeight = height;
+          },
+          k.easings.easeInCubic
+        );
+
+        // Stretch the warp lines even more!
+        k.tween(
+          warpLineBaseWidth,
+          warpLineBaseWidth * 2,
+          0.1,
+          (width) => {
+            warpLineBaseWidth = width;
+          },
+          k.easings.easeInCubic
+        );
+
+        // Fade the blocks out
         k.tween(
           warpLineBaseOpacity,
           0,
@@ -685,19 +752,15 @@ export function startGame(gameSettings?: Partial<Settings>) {
           },
           k.easings.easeInQuad
         );
-        k.tween(
-          wrapLineBaseWidth,
-          wrapLineBaseWidth * 10,
-          4,
-          (width) => {
-            wrapLineBaseWidth = width;
-          },
-          k.easings.easeInQuad
-        );
       });
 
       // End the game
-      k.wait(9, () => k.go("goodEnding"));
+      k.wait(9.5, () => k.go("goodEnding"));
+    });
+
+    k.onKeyPress("escape", () => {
+      audioManger.stop("HyperdriveSound");
+      k.go("start");
     });
   });
 
@@ -761,29 +824,28 @@ export function startGame(gameSettings?: Partial<Settings>) {
 
       k.wait(8, () => {
         subTitle.add([
-          k.sprite(Math.random() < 0.5 ? "william" : "jonny"),
-          k.scale(2, 2),
+          k.sprite("jowillnny"),
+          k.scale(0.5, 0.5),
           k.pos(0, 140),
           k.anchor("center"),
           k.fadeIn(5),
-          k.opacity(40),
+          k.opacity(0.5),
           k.area(),
           k.body({
             isStatic: true,
           } as PatchedBodyCompOpt),
+          k.z(Z.stars + 1),
         ]);
-        k.z(Z.stars + 1);
       });
     });
 
     // Event callback handlers
     k.onKeyPress("enter", () => {
       k.get("star").forEach((star) => {
-        star.onUpdate(() => {
-          star.pos.x -= randNum(1, settings.SPEED * 1.5);
-        });
+        star.destroy()
       });
-      k.go("game");
+      audioManger.stop("HyperdriveSound");
+      k.go("start");
     });
   });
 
