@@ -85,7 +85,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
   const trades = new Trades(k, storage, settings);
 
   // Load fonts
-  k.loadFont("M23", "/m23.TTF");
+  k.loadFont("M23", "/m23.ttf");
   k.loadFont("HardDrive", "/hard-drive.ttf");
 
   // Load sprites
