@@ -36,10 +36,13 @@ export class AudioManager {
 
   public play(soundId: SoundId, options?: AudioPlayOpt) {
     const { volume = 1 } = options || {};
+    console.log(this.isMuted);
+
     const sound = this.k.play(soundId, {
-      volume: (this.settings.VOLUME / 100) * volume,
       ...options,
+      volume: this.isMuted ? 0 : (this.settings.VOLUME / 100) * volume,
     });
+
     this.SoundToStorage[soundId] = {
       audioPlay: sound,
       volume,
