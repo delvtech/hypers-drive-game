@@ -30,6 +30,7 @@ function initSettings(settings?: Partial<Settings>): Settings {
     ADD_TRADE_CHANCE: 50,
     ADD_LIQUIDITY_CHANCE: 25,
     REMOVE_LIQUIDITY_CHANCE: 25,
+    VOLUME: 50,
     ...settings,
   };
 }
@@ -45,12 +46,21 @@ const SPEED_OF_LIGHT = 186_000; // mi/s
 const WARP_SPEED = SPEED_OF_LIGHT * 2;
 
 export function startGame(gameSettings?: Partial<Settings>) {
+  const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
+
   // Create kaboom instance
   const k = kaboom({
+    width: 960,
+    height: 600,
     background: [20, 22, 30],
     // play music outside of focus
     backgroundAudio: true,
+    canvas,
   });
+
+  // window.addEventListener("load", () => {
+  //   k.width = document.documentElement.clientWidth;
+  // });
 
   // Calculate once and reuse
   const gameWidth = k.width();
@@ -72,7 +82,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
 
   // Initiate helper classes
   const storage = new GameStorage();
-  const audioManger = new AudioManager(k);
+  const audioManger = new AudioManager(k, settings);
   const events = new Events(settings);
 
   // Initiate reusable object classes outside the scenes
@@ -84,6 +94,17 @@ export function startGame(gameSettings?: Partial<Settings>) {
   k.loadFont("HardDrive", "/hard-drive.ttf");
 
   // Load sprites
+  k.loadSprite("volume", "/volume.png", {
+    sliceX: 3,
+    anims: {
+      high: {
+        from: 0,
+        to: 0,
+      },
+      low: 1,
+      mute: 2,
+    },
+  });
   k.loadSprite("player", "/car-driving.png", {
     sliceX: 3,
     anims: {
@@ -97,6 +118,56 @@ export function startGame(gameSettings?: Partial<Settings>) {
   });
   k.loadSprite("bird", "/bird.png");
   k.loadSprite("ryanGosling", "/ryan_gosling_drive_movie_ascii_art.png");
+  k.loadSprite("william", "/william.png");
+  k.loadSprite("jonny", "/jonny.png");
+
+  // Add volume controls
+  const volumeContainer = k.add([
+    k.anchor("topright"),
+    k.pos(gameWidth - 20, 20),
+    k.fixed(),
+    k.stay(),
+    k.z(Z.hud),
+  ]);
+
+  // Volume bg
+  const volumeButton = volumeContainer.add([
+    k.circle(20),
+    k.color(20, 22, 30),
+    k.opacity(0.5),
+    k.anchor("topright"),
+    k.area(),
+  ]);
+  volumeButton.onHover(() => {
+    k.setCursor("pointer");
+    volumeButton.color = k.rgb(255, 255, 255);
+    volumeButton.opacity = 0.2;
+  });
+  volumeButton.onHoverEnd(() => {
+    k.setCursor("default");
+    volumeButton.color = k.rgb(20, 22, 30);
+    volumeButton.opacity = 0.5;
+  });
+
+  // Volume icon
+  const volumeIcon = volumeContainer.add([
+    k.sprite("volume"),
+    k.anchor("center"),
+    // @ts-ignore
+    k.pos(-20, 20),
+    k.area(),
+  ]);
+
+  // Mute the volume on click of the volume button
+  volumeButton.onClick(() => {
+    if (audioManger.isMuted) {
+      volumeIcon.play(settings.VOLUME < 50 ? "low" : "high");
+      audioManger.unMute();
+    } else {
+      audioManger.mute();
+      volumeIcon.play("mute");
+    }
+  });
 
   // Scenes
 
@@ -144,33 +215,33 @@ export function startGame(gameSettings?: Partial<Settings>) {
         font: "M23",
         size: 96,
       }),
-      k.pos(gameWidth / 2, 200),
+      k.pos(gameWidth / 2, 100),
       k.anchor("center"),
     ]);
 
     const subTitle = title.add([
       k.text("Can you handle the quantum leap anon", {
         font: "HardDrive",
-        size: 42,
+        size: 48,
       }),
       k.pos(0, 100),
       k.anchor("center"),
     ]);
 
-    subTitle.add([
+    const instructions = subTitle.add([
       k.text("Press ENTER to start the game...", {
         font: "M23",
-        size: 20,
+        size: 32,
       }),
-      k.pos(0, 100),
+      k.pos(0, 50),
       k.anchor("center"),
     ]);
 
-    k.add([
+    instructions.add([
       k.sprite("ryanGosling"),
-      k.scale(0.5, 0.5),
-      k.pos(gameWidth / 2, gameHeight / 2 + 100),
-      k.anchor("center"),
+      k.scale(0.2, 0.2),
+      k.pos(0, 50),
+      // k.anchor("center"),
       k.area(),
       k.body({
         isStatic: true,
@@ -179,7 +250,6 @@ export function startGame(gameSettings?: Partial<Settings>) {
 
     audioManger.startMusic("StartMusic", {
       loop: true,
-      volume: 0.01,
     });
 
     // Event callback handlers
@@ -549,19 +619,23 @@ export function startGame(gameSettings?: Partial<Settings>) {
       // stats.update("SPEED", `${formatSpeed(WARP_SPEED)}!!!`);
       currentPlayerSpeed = WARP_SPEED;
 
+      let warpLineBaseSpeed = 5;
+      let wrapLineBaseWidth = 1;
+      let warpLineBaseOpacity = 2;
+
       k.loop(0.01, () => {
         const warpLine = k.add([
           "warpLine",
-          k.rect(randNum(0, 5), 10),
-          k.pos(gameWidth, randNum(0, gameHeight)),
+          k.rect(randNum(wrapLineBaseWidth, wrapLineBaseWidth * 5), 10),
+          k.pos(gameWidth + 100, randNum(0, gameHeight)),
           k.anchor("left"),
           k.color(255, 255, 255),
-          k.opacity(randNum(2, 6) / 10),
+          k.opacity(randNum(warpLineBaseOpacity, warpLineBaseOpacity * 3) / 10),
           k.offscreen({ destroy: true }),
           k.z(Z.stars),
         ]);
         warpLine.onUpdate(() => {
-          warpLine.pos.x -= randNum(5, 10);
+          warpLine.pos.x -= randNum(warpLineBaseSpeed, warpLineBaseSpeed * 2);
         });
       });
 
@@ -593,10 +667,123 @@ export function startGame(gameSettings?: Partial<Settings>) {
           (x) => (player.pos.x = x),
           k.easings.easeInCubic
         );
+        k.tween(
+          warpLineBaseSpeed,
+          warpLineBaseSpeed * 100,
+          5,
+          (speed) => {
+            warpLineBaseSpeed = speed;
+          },
+          k.easings.easeInQuad
+        );
+        k.tween(
+          warpLineBaseOpacity,
+          0,
+          4,
+          (opacity) => {
+            warpLineBaseOpacity = opacity;
+          },
+          k.easings.easeInQuad
+        );
+        k.tween(
+          wrapLineBaseWidth,
+          wrapLineBaseWidth * 10,
+          4,
+          (width) => {
+            wrapLineBaseWidth = width;
+          },
+          k.easings.easeInQuad
+        );
       });
 
       // End the game
-      k.wait(6, () => k.go("gameover"));
+      k.wait(9, () => k.go("goodEnding"));
+    });
+  });
+
+  k.scene("goodEnding", () => {
+    // Generate random stars
+    for (let i = 0; i < 100; i++) {
+      const star = k.add([
+        "star",
+        k.circle(randNum(1, 2)),
+        k.pos(randNum(0, gameWidth), randNum(0, gameHeight)),
+        k.anchor("left"),
+        k.color(255, 255, 255),
+        k.opacity(randNum(2, 6) / 10),
+        k.offscreen({ destroy: true }),
+        k.z(Z.stars),
+        k.stay(),
+      ]);
+      star.onUpdate(() => {
+        star.pos.x -= randNum(0.2, 1);
+      });
+    }
+    k.loop(0.5, () => {
+      const star = k.add([
+        "star",
+        k.circle(randNum(1, 2)),
+        k.pos(gameWidth, randNum(0, gameHeight)),
+        k.anchor("left"),
+        k.color(255, 255, 255),
+        k.opacity(randNum(2, 6) / 10),
+        k.offscreen({ destroy: true }),
+        k.z(Z.stars),
+        k.stay(),
+      ]);
+      star.onUpdate(() => {
+        star.pos.x -= randNum(0.2, 1);
+      });
+    });
+
+    const title = k.add([
+      k.text("HYPERDRIVE", {
+        font: "M23",
+        size: 96,
+      }),
+      k.pos(gameWidth / 2, gameHeight / 3),
+      k.anchor("center"),
+      k.opacity(40),
+      k.fadeIn(5),
+    ]);
+
+    k.wait(2, () => {
+      const subTitle = title.add([
+        k.text("Coming in the year 2023", {
+          font: "HardDrive",
+          size: 56,
+        }),
+        k.pos(0, 100),
+        k.anchor("center"),
+        k.opacity(40),
+        k.fadeIn(6),
+      ]);
+
+      k.wait(8, () => {
+        subTitle.add([
+          k.sprite(Math.random() < 0.5 ? "william" : "jonny"),
+          k.scale(3, 3),
+          k.pos(0, 300),
+          k.anchor("center"),
+          k.fadeIn(5),
+          k.opacity(40),
+          k.area(),
+          k.body({
+            isStatic: true,
+          } as PatchedBodyCompOpt),
+        ]);
+        k.z(Z.stars + 1);
+      });
+    });
+
+    // Event callback handlers
+    k.onKeyPress("enter", () => {
+      k.get("star").forEach((star) => {
+        star.onUpdate(() => {
+          star.pos.x -= randNum(1, settings.SPEED * 1.5);
+        });
+      });
+      k.go("game");
     });
   });
 
