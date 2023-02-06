@@ -79,4 +79,9 @@ export interface Settings {
    * The % chance that each event has of being removed liquidity (gaps get smaller).
    */
   REMOVE_LIQUIDITY_CHANCE: number;
+
+  /**
+   * The volume %
+   */
+  VOLUME: number;
 }
