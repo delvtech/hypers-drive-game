@@ -117,8 +117,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
   });
   k.loadSprite("bird", "/bird.png");
   k.loadSprite("ryanGosling", "/ryan_gosling_drive_movie_ascii_art.png");
-  k.loadSprite("william", "/william.png");
-  k.loadSprite("jonny", "/jonny.png");
+  k.loadSprite("jowillnny", "/jowillnny.png");
 
   // Add volume controls
   const volumeContainer = k.add([
@@ -761,16 +760,17 @@ export function startGame(gameSettings?: Partial<Settings>) {
 
       k.wait(8, () => {
         subTitle.add([
-          k.sprite(Math.random() < 0.5 ? "william" : "jonny"),
-          k.scale(2, 2),
+          k.sprite("jowillnny"),
+          k.scale(0.5, 0.5),
           k.pos(0, 140),
           k.anchor("center"),
           k.fadeIn(5),
-          k.opacity(40),
+          k.opacity(0.5),
           k.area(),
           k.body({
             isStatic: true,
           } as PatchedBodyCompOpt),
+          k.z(Z.stars + 1),
         ]);
         k.z(Z.stars + 1);
       });
