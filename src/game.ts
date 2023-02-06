@@ -7,7 +7,6 @@ import { Stats } from "./objects/Stats";
 import { Events } from "./Events";
 import { EventFeed } from "./objects/EventFeed";
 import { Trades } from "./objects/Trades";
-import BezierEasing from "bezier-easing";
 import { AudioManager } from "./AudioManager";
 
 /**
@@ -224,24 +223,25 @@ export function startGame(gameSettings?: Partial<Settings>) {
         font: "HardDrive",
         size: 48,
       }),
-      k.pos(0, 100),
+      k.pos(0, 90),
       k.anchor("center"),
     ]);
 
     const instructions = subTitle.add([
       k.text("Press ENTER to start the game...", {
         font: "M23",
-        size: 32,
+        size: 24,
       }),
-      k.pos(0, 50),
+      k.pos(0, 120),
       k.anchor("center"),
     ]);
 
     instructions.add([
       k.sprite("ryanGosling"),
       k.scale(0.2, 0.2),
-      k.pos(0, 50),
-      // k.anchor("center"),
+      k.pos(0, 150),
+      k.anchor("center"),
+
       k.area(),
       k.body({
         isStatic: true,
@@ -653,7 +653,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
       // Make the player move back slightly before suddenly blasting off.
       k.tween(
         player.pos.x,
-        player.pos.x - 1000,
+        player.pos.x - 600,
         3,
         (x) => (player.pos.x = x),
         k.easings.easeInOutCubic
@@ -663,7 +663,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
         k.tween(
           player.pos.x,
           finalPlayerX + 1000,
-          0.2,
+          0.1,
           (x) => (player.pos.x = x),
           k.easings.easeInCubic
         );
@@ -743,8 +743,8 @@ export function startGame(gameSettings?: Partial<Settings>) {
       }),
       k.pos(gameWidth / 2, gameHeight / 3),
       k.anchor("center"),
-      k.opacity(40),
-      k.fadeIn(5),
+      k.opacity(50),
+      k.fadeIn(4),
     ]);
 
     k.wait(2, () => {
@@ -762,8 +762,8 @@ export function startGame(gameSettings?: Partial<Settings>) {
       k.wait(8, () => {
         subTitle.add([
           k.sprite(Math.random() < 0.5 ? "william" : "jonny"),
-          k.scale(3, 3),
-          k.pos(0, 300),
+          k.scale(2, 2),
+          k.pos(0, 140),
           k.anchor("center"),
           k.fadeIn(5),
           k.opacity(40),
