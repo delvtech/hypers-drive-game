@@ -1,18 +1,24 @@
 import { AudioPlay, AudioPlayOpt, KaboomCtx } from "kaboom";
 import { Settings } from "./settings";
 
-type MusicId = "StartMusic";
+type SoundId = "StartMusic" | "JumpSound" | "HyperdriveSound";
+
+interface SoundStorage {
+  audioPlay: AudioPlay;
+  volume: number;
+}
 
 export class AudioManager {
   private k: KaboomCtx;
   private settings: Settings;
-  private MusicToAudioPlay: Record<string, AudioPlay>;
+  private volumeBeforeMute: number;
+  private SoundToStorage: Record<string, SoundStorage>;
   private _isMuted = false;
 
   constructor(kaboom: KaboomCtx, settings: Settings) {
     this.k = kaboom;
     this.settings = settings;
-    this.MusicToAudioPlay = {};
+    this.SoundToStorage = {};
 
     // Load sounds
     this.k.loadSound("StartMusic", "/the-perfect-girl-slowed.mp3");
@@ -21,48 +27,60 @@ export class AudioManager {
   }
 
   public get audios() {
-    return this.MusicToAudioPlay;
+    return this.SoundToStorage;
   }
 
   public get isMuted() {
     return this._isMuted;
   }
 
-  public startMusic(musicId: MusicId, options?: AudioPlayOpt) {
-    console.log(musicId, "| volume", this.settings.VOLUME);
-    const music = this.k.play(musicId, {
-      volume: this.settings.VOLUME / 100,
+  public play(soundId: SoundId, options?: AudioPlayOpt) {
+    const { volume = 1 } = options || {};
+    const sound = this.k.play(soundId, {
+      volume: (this.settings.VOLUME / 100) * volume,
       ...options,
     });
-    this.MusicToAudioPlay[musicId] = music;
-    return music;
+    this.SoundToStorage[soundId] = {
+      audioPlay: sound,
+      volume,
+    };
+    return sound;
   }
 
-  public stopMusic(musicId: MusicId) {
-    const music = this.MusicToAudioPlay[musicId];
-    if (music) {
-      music.paused = true;
+  public stop(soundId: SoundId) {
+    const sound = this.SoundToStorage[soundId]?.audioPlay;
+    if (sound) {
+      sound.paused = true;
     }
   }
 
   public mute() {
     this._isMuted = true;
-    for (const audio of Object.values(this.MusicToAudioPlay)) {
-      audio.volume = 0;
+    this.volumeBeforeMute = this.settings.VOLUME;
+    this.settings.VOLUME = 0;
+    for (const { audioPlay } of Object.values<SoundStorage>(
+      this.SoundToStorage
+    )) {
+      audioPlay.volume = 0;
     }
   }
 
   public unMute() {
     this._isMuted = false;
-    for (const audio of Object.values(this.MusicToAudioPlay)) {
-      audio.volume = this.settings.VOLUME / 100;
+    this.settings.VOLUME = this.volumeBeforeMute;
+    for (const { audioPlay, volume } of Object.values<SoundStorage>(
+      this.SoundToStorage
+    )) {
+      audioPlay.volume = (this.settings.VOLUME / 100) * volume;
     }
   }
 
-  public setVolume(level: number = this.settings.VOLUME) {
-    this.settings.VOLUME = level;
-    for (const audio of Object.values(this.MusicToAudioPlay)) {
-      audio.volume = level / 100;
+  public setVolume(level: number) {
+    this.settings.VOLUME = level * 100;
+    for (const { audioPlay, volume } of Object.values<SoundStorage>(
+      this.SoundToStorage
+    )) {
+      audioPlay.volume = (level / 100) * volume;
     }
   }
 }
