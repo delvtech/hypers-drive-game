@@ -345,7 +345,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
       k.play("JumpSound", {
         volume: 0.01,
       });
-      
+
       const feesText = k.add([
         k.text("+Fees", {
           size: 24,
@@ -517,6 +517,10 @@ export function startGame(gameSettings?: Partial<Settings>) {
     player.onCollide("blastoff", () => {
       isBlastingOff = true;
 
+      k.play("HyperdriveSound", {
+        volume: 0.1,
+      });
+
       // Stop tweening
       speedTween.cancel();
       playerSpeedTween.cancel();
@@ -538,25 +542,34 @@ export function startGame(gameSettings?: Partial<Settings>) {
       // control is turned off.
       player.gravityScale = 0;
 
+      k.setGravity(0);
+
       // Set the top speed to FTL for hyperspace.
       storage.topSpeed = WARP_SPEED;
       // stats.update("SPEED", `${formatSpeed(WARP_SPEED)}!!!`);
       currentPlayerSpeed = WARP_SPEED;
 
+      k.loop(0.01, () => {
+        const warpLine = k.add([
+          "warpLine",
+          k.rect(randNum(0, 5), 10),
+          k.pos(gameWidth, randNum(0, gameHeight)),
+          k.anchor("left"),
+          k.color(255, 255, 255),
+          k.opacity(randNum(2, 6) / 10),
+          k.offscreen({ destroy: true }),
+          k.z(Z.stars),
+        ]);
+        warpLine.onUpdate(() => {
+          warpLine.pos.x -= randNum(5, 10);
+        });
+      });
+
       // Tween the SPEED setting to make background objects speed up.
       k.tween(
         settings.SPEED,
-        settings.SPEED * 20,
-        0.4,
-        (speed) => {
-          settings.SPEED = speed;
-        },
-        BezierEasing(1, -0.1, 1, 0)
-      );
-      k.tween(
-        settings.SPEED,
-        settings.SPEED * 100,
-        0.6,
+        settings.SPEED * 10,
+        1,
         (speed) => {
           settings.SPEED = speed;
         },
@@ -566,14 +579,24 @@ export function startGame(gameSettings?: Partial<Settings>) {
       // Make the player move back slightly before suddenly blasting off.
       k.tween(
         player.pos.x,
-        finalPlayerX + 100,
-        0.4,
+        player.pos.x - 1000,
+        3,
         (x) => (player.pos.x = x),
-        BezierEasing(0.6, -1, 0.8, -0.3)
+        k.easings.easeInOutCubic
       );
 
+      k.wait(4, () => {
+        k.tween(
+          player.pos.x,
+          finalPlayerX + 1000,
+          0.2,
+          (x) => (player.pos.x = x),
+          k.easings.easeInCubic
+        );
+      });
+
       // End the game
-      k.wait(1, () => k.go("gameover"));
+      k.wait(6, () => k.go("gameover"));
     });
   });
 
