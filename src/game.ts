@@ -224,7 +224,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
     ]);
 
     const instructions = subTitle.add([
-      k.text("Press ENTER to start the game...", {
+      k.text("Press SPACE to start the game...", {
         font: "M23",
         size: 24,
       }),
@@ -249,7 +249,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
     });
 
     // Event callback handlers
-    k.onKeyPress("enter", () => {
+    k.onKeyPress("space", () => {
       k.get("star").forEach((star) => {
         star.onUpdate(() => {
           star.pos.x -= randNum(1, settings.SPEED * 1.5);
@@ -266,6 +266,12 @@ export function startGame(gameSettings?: Partial<Settings>) {
   k.scene("game", () => {
     // Reset storage to default state
     storage.reset();
+
+    // Play background noise
+    audioManger.play("GameBackgroundMusic", {
+      volume: 0.2,
+      loop: true,
+    });
 
     // Establish gravity
     k.setGravity(GRAVITY);
@@ -855,7 +861,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
   k.scene("gameover", () => {
     k.add([k.text("Game over!"), k.pos(gameWidth / 2, 50), k.anchor("center")]);
     k.add([
-      k.text("Press ENTER to restart", {
+      k.text("Press SPACE to restart", {
         size: 20,
       }),
       k.pos(gameWidth / 2, 250),
@@ -898,7 +904,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
     ]);
 
     // Event callback handlers
-    k.onKeyPress("enter", () => {
+    k.onKeyPress("space", () => {
       k.go("game");
     });
     k.onKeyPress("escape", () => {
