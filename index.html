@@ -2,14 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/Element-Dark.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HYPERDRIVE DOCS</title>
+    <title>Hyerdrive Documentation</title>
   </head>
-  <link
-    rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=Teko:wght@300;500;700&display=swap"
-  />
+
   <style>
     @font-face {
       font-family: "M23";
@@ -22,23 +19,80 @@
     }
 
     @font-face {
+      font-family: "Roboto";
+      src: url(Roboto/Roboto-Regular.ttf);
+    }
+
+    @font-face {
+      font-family: "Roboto";
+      src: url(Roboto/Roboto-Bold.ttf);
+      font-weight: bold;
+    }
+
+    @font-face {
       font-family: "Teko";
       src: url("https://fonts.googleapis.com/css2?family=Teko:wght@300;500;700&display=swap");
     }
 
     h1 {
       font-family: "M23";
-      font-size: 64px;
+      font-size: 72px;
     }
 
     h2 {
       font-family: "M23";
-      font-size: 32px;
+      font-size: 36px;
     }
 
-    p {
-      font-size: 16px;
-      font-family: "Teko", sans-serif;
+    h3 {
+      font-family: "Roboto";
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    h4 {
+      font-family: "Roboto";
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    table td,
+    table th {
+      border: 1px solid #ddd;
+      padding: 6px 13px;
+    }
+
+    code {
+      padding: 2px 4px;
+      font-size: 90%;
+      background-color: #f9f2f4;
+      border-radius: 4px;
+    }
+
+    code,
+    kbd,
+    pre,
+    samp {
+      font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+    }
+
+    td,
+    th {
+      padding: 0;
+    }
+
+    p,
+    li {
+      font-size: 18px;
+      font-family: "Roboto";
+    }
+
+    table {
+      display: block;
+      overflow: auto;
+      width: 100%;
+      word-break: normal;
+      word-break: keep-all;
     }
 
     #game-canvas {
@@ -48,16 +102,19 @@
 
     #doc {
       max-width: 960px;
-      margin: 0 auto;
+      margin: 10px auto;
       height: 100%;
+      padding: 10px 20px;
+      margin-bottom: 50px;
+    }
+
+    body {
+      padding-bottom: 50px !important;
     }
   </style>
+
   <body>
-    <div
-      id="doc"
-      class="markdown-body container-fluid comment-enabled comment-inner"
-      data-hard-breaks="true"
-    >
+    <div id="doc" data-hard-breaks="true">
       <h1 id="Hyperdrive" data-id="Hyperdrive"><span>Hyperdrive</span></h1>
       <p>
         <span class="ui-comment-inline-span">Hyperdrive</span
@@ -112,15 +169,12 @@
         ><span> because they like the variable rate.</span>
       </p>
       <p><span>Which side are you on?</span></p>
+
       <table>
         <thead>
           <tr>
             <th style="text-align: center">
-              <img
-                src="https://i.imgur.com/Bz1Ug6R.png"
-                alt=""
-                loading="lazy"
-              />
+              <img src="/meme.png" alt="log dai savings rates" loading="lazy" />
             </th>
           </tr>
         </thead>
@@ -129,13 +183,14 @@
             <td style="text-align: center">
               <strong
                 ><span
-                  >Economists, they've made total fools out of us</span
+                  >Economists, they’ve made total fools out of us</span
                 ></strong
               >
             </td>
           </tr>
         </tbody>
       </table>
+
       <h2 id="Overview" data-id="Overview"><span>Overview</span></h2>
       <p>
         <span
@@ -289,13 +344,6 @@
           ></span
         ><span>.</span>
       </p>
-      <p>
-        <img
-          src="https://i.imgur.com/W9QVOam.png"
-          alt="Flappy Bird"
-          loading="lazy"
-        />
-      </p>
       <h3 id="4-Trading-Strategies" data-id="4-Trading-Strategies">
         <span>4. Trading Strategies</span>
       </h3>
@@ -351,7 +399,7 @@
       </p>
       <h4 id="B-Interest-Rate-Arbitrage" data-id="B-Interest-Rate-Arbitrage">
         <span>B. I</span
-        ><span class="ui-comment-inline-span">nterest Rate Arbitrage</span>
+        ><span class="ui-comment-inline-span">Interest Rate Arbitrage</span>
       </h4>
       <p>
         <span
@@ -369,8 +417,8 @@
           <tr>
             <td style="text-align: center">
               <img
-                src="https://i.imgur.com/rCmFheb.png"
-                alt=""
+                src="/log-dsr-rates.png"
+                alt="log dai savings rates"
                 loading="lazy"
               />
             </td>
@@ -507,11 +555,7 @@
         <thead>
           <tr>
             <th style="text-align: center">
-              <img
-                src="https://i.imgur.com/aphOgTj.png"
-                alt=""
-                loading="lazy"
-              />
+              <img src="/bunneyman.png" alt="" loading="lazy" />
             </th>
           </tr>
         </thead>
