@@ -44,6 +44,9 @@ export const Z = {
 const SPEED_OF_LIGHT = 186_000; // mi/s
 const WARP_SPEED = SPEED_OF_LIGHT * 2;
 
+const fullWidth = 960;
+const fullHeight = 600;
+
 export function startGame(gameSettings?: Partial<Settings>) {
   const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
 
@@ -62,7 +65,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
       return;
     }
 
-    window.scrollBy(0, startTouchY - touchY);
+    window.scrollBy(0, (startTouchY - touchY) * 1.8);
     startTouchY = undefined;
   });
   canvas.addEventListener("touchend", () => {
@@ -78,6 +81,16 @@ export function startGame(gameSettings?: Partial<Settings>) {
     backgroundAudio: true,
     canvas,
   });
+
+  const sizeScale = canvas.parentElement.clientWidth / fullWidth;
+  const newWidth = fullWidth * sizeScale;
+  const newHeight = fullHeight * sizeScale;
+
+  canvas.style.scale = sizeScale.toString();
+  canvas.style.marginLeft = `${-(fullWidth / 2 - newWidth / 2)}px`;
+  canvas.style.marginRight = `${-(fullWidth / 2 - newWidth / 2)}px`;
+  canvas.style.marginTop = `${-(fullHeight / 2 - newHeight / 2)}px`;
+  canvas.style.marginBottom = `${-(fullHeight / 2 - newHeight / 2)}px`;
 
   // Calculate once and reuse
   const gameWidth = k.width();
