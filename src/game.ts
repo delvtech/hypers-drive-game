@@ -421,10 +421,11 @@ export function startGame(gameSettings?: Partial<Settings>) {
 
       const feesText = k.add([
         k.text("+Fees", {
-          size: 24,
+          size: 18,
         }),
-        k.pos(gameWidth - 100, 100),
+        k.pos(gameWidth - 50, 80),
         k.anchor("center"),
+        Z.stars + 1,
       ]);
 
       // increase score and update stat object
