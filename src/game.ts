@@ -581,6 +581,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
       if (isBlastingOff) {
         return;
       }
+      audioManger.stop("GameBackgroundMusic");
       k.go("gameover");
     });
 
@@ -693,7 +694,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
       });
 
       // HYPERSPACE
-      k.wait(4.3, () => {
+      k.wait(4.1, () => {
         // Propel the player forward
         k.tween(
           player.pos.x,
@@ -761,11 +762,15 @@ export function startGame(gameSettings?: Partial<Settings>) {
       });
 
       // End the game
-      k.wait(9, () => k.go("goodEnding"));
+      k.wait(9, () => {
+        audioManger.stop("GameBackgroundMusic");
+        k.go("goodEnding");
+      });
     });
 
     k.onKeyPress("escape", () => {
       audioManger.stop("HyperdriveSound");
+      audioManger.stop("GameBackgroundMusic");
       k.go("start");
     });
   });
