@@ -113,7 +113,6 @@ export function startGame(gameSettings?: Partial<Settings>) {
   });
   k.loadSprite("bird", "/bird.png");
   k.loadSprite("ryanGosling", "/ryan_gosling_drive_movie_ascii_art.png");
-  k.loadSprite("jowillnny", "/jowillnny.png");
 
   // Add volume controls
   const volumeContainer = k.add([
@@ -248,8 +247,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
       loop: true,
     });
 
-    // Event callback handlers
-    k.onKeyPress("space", () => {
+    const transitionEventHandler = () => {
       k.get("star").forEach((star) => {
         star.onUpdate(() => {
           star.pos.x -= randNum(1, settings.SPEED * 1.5);
@@ -257,7 +255,11 @@ export function startGame(gameSettings?: Partial<Settings>) {
       });
       audioManger.stop("StartMusic");
       k.go("game");
-    });
+    };
+
+    // Event callback handlers
+    k.onKeyPress("space", transitionEventHandler);
+    k.onTouchStart(transitionEventHandler);
   });
 
   //////////////////////////////////////////////////////////////////////////////
@@ -383,7 +385,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
     let accelerateTween: TweenController;
 
     // Jump control which increases the score and shows a "+fees" message.
-    const jumpControl = k.onKeyPress("space", () => {
+    const onJumpHandler = () => {
       // Make the player jump upward
       player.jump(JUMP_FORCE);
 
@@ -432,7 +434,10 @@ export function startGame(gameSettings?: Partial<Settings>) {
       k.wait(0.5, () => {
         k.destroy(feesText);
       });
-    });
+    };
+
+    const jumpControl = k.onKeyPress("space", onJumpHandler);
+    const jumpControlTouch = k.onTouchStart(onJumpHandler);
 
     // Update the speed every 200 ms.
     k.loop(0.2, () => {
@@ -603,6 +608,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
 
       // Turn off the jump control.
       jumpControl.cancel();
+      jumpControlTouch.cancel();
 
       // Remove gravity to keep the player from falling.
       k.setGravity(0);
@@ -764,10 +770,13 @@ export function startGame(gameSettings?: Partial<Settings>) {
       k.wait(9, () => k.go("goodEnding"));
     });
 
-    k.onKeyPress("escape", () => {
+    const transitionToStartGame = () => {
       audioManger.stop("HyperdriveSound");
       k.go("start");
-    });
+    };
+
+    k.onKeyPress("escape", transitionToStartGame);
+    // k.onTouchStart(transitionToStartGame);
   });
 
   k.scene("goodEnding", () => {
@@ -828,31 +837,31 @@ export function startGame(gameSettings?: Partial<Settings>) {
         k.fadeIn(6),
       ]);
 
-      k.wait(8, () => {
+      k.wait(1, () => {
         subTitle.add([
-          k.sprite("jowillnny"),
-          k.scale(0.5, 0.5),
-          k.pos(0, 140),
+          k.text("Built By Element Finance", {
+            font: "M23",
+            size: 24,
+          }),
+          k.pos(0, 250),
           k.anchor("center"),
-          k.fadeIn(5),
-          k.opacity(0.5),
-          k.area(),
-          k.body({
-            isStatic: true,
-          } as PatchedBodyCompOpt),
-          k.z(Z.stars + 1),
+          k.opacity(40),
+          k.fadeIn(6),
         ]);
       });
     });
 
-    // Event callback handlers
-    k.onKeyPress("enter", () => {
+    const handleNextTransition = () => {
       k.get("star").forEach((star) => {
         star.destroy();
       });
       audioManger.stop("HyperdriveSound");
       k.go("start");
-    });
+    };
+
+    // Event callback handlers
+    k.onKeyPress("enter", handleNextTransition);
+    k.onTouchStart(handleNextTransition);
   });
 
   //////////////////////////////////////////////////////////////////////////////
@@ -910,9 +919,13 @@ export function startGame(gameSettings?: Partial<Settings>) {
     k.onKeyPress("escape", () => {
       k.go("start");
     });
+
+    k.onTouchStart(() => {
+      k.go("game");
+    });
   });
 
-  k.go("start");
+  k.go("goodEnding");
 
   focus();
 }
