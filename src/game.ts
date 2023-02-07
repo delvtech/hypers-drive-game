@@ -225,7 +225,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
     ]);
 
     const subTitle = title.add([
-      k.text("Can you handle the quantum leap anon", {
+      k.text("Can you handle the quantum leap", {
         font: "HardDrive",
         size: 48,
       }),
