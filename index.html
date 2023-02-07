@@ -56,13 +56,13 @@
       font-weight: bold;
     }
 
-    i {
-      font-family: sans-serif;
-    }
-
     @font-face {
       font-family: "Teko";
       src: url("https://fonts.googleapis.com/css2?family=Teko:wght@300;500;700&display=swap");
+    }
+
+    i {
+      font-family: sans-serif;
     }
 
     h1 {
@@ -73,6 +73,24 @@
     h2 {
       font-family: "M23";
       font-size: 36px;
+    }
+
+    @media screen and (max-width: 568px) {
+      h1 {
+        font-size: 56px;
+      }
+      h2 {
+        font-size: 28px;
+      }
+    }
+
+    @media screen and (max-width: 400px) {
+      h1 {
+        font-size: 42px;
+      }
+      h2 {
+        font-size: 20px;
+      }
     }
 
     h3 {
@@ -152,7 +170,8 @@
       max-width: 960px;
       margin: 0 auto;
       height: 100%;
-      padding: 0px 12px;
+      padding: 0px 4vw;
+      box-sizing: border-box;
     }
 
     #doc > :last-child {
@@ -214,7 +233,11 @@
       <button id="play-game-button">Play Hypers Drive Game</button>
       <canvas id="game-canvas"></canvas>
 
-      <h2 id="A-New-Way-To-Trade-Rates" data-id="A-New-Way-To-Trade-Rates">
+      <h2
+        tabindex="1"
+        id="A-New-Way-To-Trade-Rates"
+        data-id="A-New-Way-To-Trade-Rates"
+      >
         <span>A New Way To Trade Rates</span>
       </h2>
       <p>

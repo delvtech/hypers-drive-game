@@ -9,17 +9,6 @@ import { EventFeed } from "./objects/EventFeed";
 import { Trades } from "./objects/Trades";
 import { AudioManager } from "./AudioManager";
 
-let ratio = 0.6;
-
-let ww = window.innerWidth;
-let wh = window.innerHeight;
-let kaboomDimensions = {};
-if (ww * ratio > wh) {
-  kaboomDimensions = { w: wh / ratio, h: wh };
-} else {
-  kaboomDimensions = { w: ww, h: ww * ratio };
-}
-
 /**
  * Add default settings to a partial settings object
  */
@@ -57,6 +46,29 @@ const WARP_SPEED = SPEED_OF_LIGHT * 2;
 
 export function startGame(gameSettings?: Partial<Settings>) {
   const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
+
+  // Manage touch scrolling on the canvas
+  // TODO: This code is janky and the  scroll keeps bugging, but it's better
+  // than not being able to scroll at all for now.
+  let startTouchY: number | undefined;
+  canvas.addEventListener("touchmove", (e: TouchEvent) => {
+    // don't scroll if using more than one finger (maybe they're trying to zoom)
+    if (e.touches.length !== 1) {
+      return;
+    }
+
+    const touch = e.touches[0];
+    const touchY = touch.clientY;
+    console.log("start", startTouchY, "now", touchY);
+
+    if (!startTouchY) {
+      startTouchY = touchY;
+      return;
+    }
+
+    window.scrollBy(0, startTouchY - touchY);
+    startTouchY = undefined;
+  });
 
   // Create kaboom instance
   const k = kaboom({
