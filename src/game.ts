@@ -9,6 +9,17 @@ import { EventFeed } from "./objects/EventFeed";
 import { Trades } from "./objects/Trades";
 import { AudioManager } from "./AudioManager";
 
+let ratio = 0.6;
+
+let ww = window.innerWidth;
+let wh = window.innerHeight;
+let kaboomDimensions = {};
+if (ww * ratio > wh) {
+  kaboomDimensions = { w: wh / ratio, h: wh };
+} else {
+  kaboomDimensions = { w: ww, h: ww * ratio };
+}
+
 /**
  * Add default settings to a partial settings object
  */
@@ -586,6 +597,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
       if (isBlastingOff) {
         return;
       }
+      audioManger.stop("GameBackgroundMusic");
       k.go("gameover");
     });
 
@@ -699,7 +711,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
       });
 
       // HYPERSPACE
-      k.wait(4.3, () => {
+      k.wait(4.1, () => {
         // Propel the player forward
         k.tween(
           player.pos.x,
@@ -767,11 +779,15 @@ export function startGame(gameSettings?: Partial<Settings>) {
       });
 
       // End the game
-      k.wait(9, () => k.go("goodEnding"));
+      k.wait(9, () => {
+        audioManger.stop("GameBackgroundMusic");
+        k.go("goodEnding");
+      });
     });
 
     const transitionToStartGame = () => {
       audioManger.stop("HyperdriveSound");
+      audioManger.stop("GameBackgroundMusic");
       k.go("start");
     };
 

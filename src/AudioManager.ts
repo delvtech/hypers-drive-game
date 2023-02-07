@@ -58,6 +58,7 @@ export class AudioManager {
     const sound = this.SoundToStorage[soundId]?.audioPlay;
     if (sound) {
       sound.paused = true;
+    } else {
     }
   }
 
