@@ -59,7 +59,6 @@ export function startGame(gameSettings?: Partial<Settings>) {
 
     const touch = e.touches[0];
     const touchY = touch.clientY;
-    console.log("start", startTouchY, "now", touchY);
 
     if (!startTouchY) {
       startTouchY = touchY;
