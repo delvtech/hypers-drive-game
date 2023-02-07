@@ -72,6 +72,10 @@ export function startGame(gameSettings?: Partial<Settings>) {
     startTouchY = undefined;
   });
 
+  canvas.addEventListener("wheel", ({ deltaY }) => {
+    window.scrollBy(0, deltaY);
+  });
+
   // Create kaboom instance
   const k = kaboom({
     width: 960,
