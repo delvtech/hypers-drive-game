@@ -48,17 +48,14 @@ export function startGame(gameSettings?: Partial<Settings>) {
   const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
 
   // Manage touch scrolling on the canvas
-  // TODO: This code is janky and the  scroll keeps bugging, but it's better
-  // than not being able to scroll at all for now.
   let startTouchY: number | undefined;
-  canvas.addEventListener("touchmove", (e: TouchEvent) => {
+  canvas.addEventListener("touchmove", ({ touches }) => {
     // don't scroll if using more than one finger (maybe they're trying to zoom)
-    if (e.touches.length !== 1) {
+    if (touches.length !== 1) {
       return;
     }
 
-    const touch = e.touches[0];
-    const touchY = touch.clientY;
+    const touchY = touches[0].clientY;
 
     if (!startTouchY) {
       startTouchY = touchY;
@@ -66,6 +63,9 @@ export function startGame(gameSettings?: Partial<Settings>) {
     }
 
     window.scrollBy(0, startTouchY - touchY);
+    startTouchY = undefined;
+  });
+  canvas.addEventListener("touchend", () => {
     startTouchY = undefined;
   });
 
