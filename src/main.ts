@@ -10,6 +10,7 @@ function handleButtonClick() {
     gameCanvas.focus();
     gameCanvas.style.display = "block";
     document.getElementById("hihi").style.display = "block";
+    document.getElementById("hihi").style.marginTop = "10px";
     gameCanvas.focus();
     (
       document.getElementById("play-game-button") as HTMLButtonElement
