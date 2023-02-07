@@ -19,6 +19,7 @@ function handleGameStart() {
 function handleGameDocsOpen() {
   document.getElementById("hihi").style.display = "block";
   document.getElementById("hihi").style.marginTop = "10px";
+  (document.getElementById("game-docs") as HTMLButtonElement).disabled = true;
 }
 
 document
