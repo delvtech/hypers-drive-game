@@ -8,6 +8,9 @@ function handleButtonClick() {
     startGame();
     gameCanvas.style.display = "block";
     gameCanvas.focus();
+    gameCanvas.style.display = "block";
+    document.getElementById("hihi").style.display = "block";
+    gameCanvas.focus();
     (
       document.getElementById("play-game-button") as HTMLButtonElement
     ).disabled = true;
