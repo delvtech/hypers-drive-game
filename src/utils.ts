@@ -39,7 +39,14 @@ export function commify(number: number | string, decimals: number = 2) {
   const parts = number.toString().split(".");
   const fraction: string | undefined = parts[1]?.slice(0, decimals);
 
-  return `${parts[0].replace(/(?<!^)(?=(\d{3})+$)/g, ",")}${
+  var collector = new Array();
+  var numberArray = ('' + parts[0]).split('').reverse();
+  for(var i = 0; i < numberArray.length; i++) {
+    if(i % 3 == 0 && i != 0) collector.push(",");
+    collector.push(numberArray[i]);
+  }
+
+  return `${collector.reverse().join('')}${
     fraction ? `.${fraction}` : ""
   }`;
 }
