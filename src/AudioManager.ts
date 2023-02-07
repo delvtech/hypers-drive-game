@@ -55,13 +55,10 @@ export class AudioManager {
   }
 
   public stop(soundId: SoundId) {
-    console.log("request to stop", soundId);
     const sound = this.SoundToStorage[soundId]?.audioPlay;
     if (sound) {
-      console.log("stoping");
       sound.paused = true;
     } else {
-      console.log("not found");
     }
   }
 

@@ -9,6 +9,17 @@ import { EventFeed } from "./objects/EventFeed";
 import { Trades } from "./objects/Trades";
 import { AudioManager } from "./AudioManager";
 
+let ratio = 0.6;
+
+let ww = window.innerWidth;
+let wh = window.innerHeight;
+let kaboomDimensions = {};
+if (ww * ratio > wh) {
+  kaboomDimensions = { w: wh / ratio, h: wh };
+} else {
+  kaboomDimensions = { w: ww, h: ww * ratio };
+}
+
 /**
  * Add default settings to a partial settings object
  */
