@@ -223,7 +223,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
     ]);
 
     const instructions = subTitle.add([
-      k.text("Press SPACE to start the game...", {
+      k.text("Press SPACE or touch to start the game...", {
         font: "M23",
         size: 24,
       }),
@@ -870,7 +870,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
   k.scene("gameover", () => {
     k.add([k.text("Game over!"), k.pos(gameWidth / 2, 50), k.anchor("center")]);
     k.add([
-      k.text("Press SPACE to restart", {
+      k.text("Press SPACE or TOUCH to restart", {
         size: 20,
       }),
       k.pos(gameWidth / 2, 250),
@@ -925,7 +925,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
     });
   });
 
-  k.go("goodEnding");
+  k.go("start");
 
   focus();
 }
