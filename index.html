@@ -183,7 +183,8 @@
       padding-bottom: 100px;
     }
 
-    #play-game-button {
+    #game-button,
+    #game-docs {
       font-family: M23;
       font-weight: bold;
       font-size: 20px;
@@ -199,13 +200,15 @@
       margin-top: 20px;
     }
 
-    #play-game-button:not([disabled]):hover {
+    #game-button:not([disabled]):hover,
+    #game-docs:not([disabled]):hover {
       transform: scale(1.02);
       transition-timing-function: ease-out;
       transition: 0.1s;
     }
 
-    #play-game-button:disabled {
+    #game-button:disabled,
+    #game-docs:disabled {
       background-color: rgb(63, 63, 63);
       cursor: default;
     }
@@ -236,12 +239,20 @@
         >
       </p>
 
-      <button id="play-game-button">Play Hypers Drive Game</button>
+      <button id="game-button">Play Hypers Drive Game</button>
+      <button id="game-docs">Instructions</button>
+
       <div>
         <canvas id="game-canvas"></canvas>
       </div>
 
-      <img id="hihi" src="/mihi.png" alt="" loading="lazy" />
+      <img
+        style="display: none"
+        id="hihi"
+        src="/mihi.png"
+        alt=""
+        loading="lazy"
+      />
 
       <h2 id="A-New-Way-To-Trade-Rates" data-id="A-New-Way-To-Trade-Rates">
         <span>A New Way To Trade Rates</span>

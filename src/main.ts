@@ -3,21 +3,28 @@ import "./style.css";
 
 const gameCanvas = document.getElementById("game-canvas");
 
-function handleButtonClick() {
+function handleGameStart() {
   if (gameCanvas.style.display !== "block") {
     startGame();
     gameCanvas.style.display = "block";
     gameCanvas.focus();
     gameCanvas.style.display = "block";
-    document.getElementById("hihi").style.display = "block";
-    document.getElementById("hihi").style.marginTop = "10px";
+
     gameCanvas.focus();
-    (
-      document.getElementById("play-game-button") as HTMLButtonElement
-    ).disabled = true;
+    (document.getElementById("game-button") as HTMLButtonElement).disabled =
+      true;
   }
 }
 
+function handleGameDocsOpen() {
+  document.getElementById("hihi").style.display = "block";
+  document.getElementById("hihi").style.marginTop = "10px";
+}
+
 document
-  .getElementById("play-game-button")
-  .addEventListener("click", handleButtonClick);
+  .getElementById("game-button")
+  .addEventListener("click", handleGameStart);
+
+document
+  .getElementById("game-docs")
+  .addEventListener("click", handleGameDocsOpen);
