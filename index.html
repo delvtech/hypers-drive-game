@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/Element-Dark.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hyerdrive Documentation</title>
+    <title>Hyerdrive</title>
   </head>
 
   <style>
@@ -27,6 +27,10 @@
       font-family: "Roboto";
       src: url(Roboto/Roboto-Bold.ttf);
       font-weight: bold;
+    }
+
+    i {
+      font-family: sans-serif;
     }
 
     @font-face {
@@ -54,6 +58,10 @@
       font-family: "Roboto";
       font-size: 20px;
       font-weight: bold;
+    }
+
+    body h2 {
+      margin-top: 20px;
     }
 
     table td,
@@ -87,6 +95,13 @@
       font-family: "Roboto";
     }
 
+    blockquote {
+      font-size: 16px;
+      padding: 0 1em;
+      color: #777;
+      border-left: 0.25em solid #ddd;
+    }
+
     table {
       display: block;
       overflow: auto;
@@ -95,25 +110,62 @@
       word-break: keep-all;
     }
 
+    img {
+      height: auto;
+      width: 100%;
+    }
+
     #game-canvas {
       width: 100vw;
       height: 500px;
+      display: none;
     }
 
     #doc {
       max-width: 960px;
       margin: 0 auto;
       height: 100%;
+      padding: 0px 12px;
     }
 
     #doc > :last-child {
       padding-bottom: 120px;
     }
+
+    #play-game-button {
+      font-family: M23;
+      font-weight: bold;
+      font-size: 20px;
+      background-color: black;
+      color: white;
+
+      border-radius: 5px;
+      border: 1px solid transparent;
+      padding: 0.8em 1.6em;
+      cursor: pointer;
+
+      margin-bottom: 20px;
+      margin-top: 20px;
+    }
+
+    #play-game-button:not([disabled]):hover {
+      transform: scale(1.02);
+      transition-timing-function: ease-out;
+      transition: 0.1s;
+    }
+
+    #play-game-button:disabled {
+      background-color: rgb(63, 63, 63);
+      cursor: default;
+    }
   </style>
 
   <body>
     <div id="doc" data-hard-breaks="true">
-      <h1 id="Hyperdrive" data-id="Hyperdrive"><span>Hyperdrive</span></h1>
+      <h1 style="margin-bottom: -30px" id="Hyperdrive" data-id="Hyperdrive">
+        <span>Hyperdrive</span>
+      </h1>
+      <h4>Authored by Element Finance</h4>
       <p>
         <span class="ui-comment-inline-span">Hyperdrive</span
         ><span>
@@ -128,7 +180,7 @@
           ></em
         >
       </p>
-
+      <button id="play-game-button">Play Hypers Drive Game</button>
       <canvas id="game-canvas"></canvas>
 
       <h2 id="A-New-Way-To-Trade-Rates" data-id="A-New-Way-To-Trade-Rates">
@@ -159,7 +211,7 @@
         ><span class="ui-comment-inline-span">short or long</span
         ><span>
           the sentiment indicator. If a user thinks the sentiment indicator is
-          too high, they'll </span
+          too high, they’ll </span
         ><span class="ui-comment-inline-span">go long</span
         ><span>
           because they like the fixed rate. If they think it is too low, they </span
@@ -167,12 +219,15 @@
         ><span> because they like the variable rate.</span>
       </p>
       <p><span>Which side are you on?</span></p>
-
       <table>
         <thead>
           <tr>
             <th style="text-align: center">
-              <img src="/meme.png" alt="log dai savings rates" loading="lazy" />
+              <img
+                src="https://i.imgur.com/Bz1Ug6R.png"
+                alt=""
+                loading="lazy"
+              />
             </th>
           </tr>
         </thead>
@@ -188,7 +243,6 @@
           </tr>
         </tbody>
       </table>
-
       <h2 id="Overview" data-id="Overview"><span>Overview</span></h2>
       <p>
         <span
@@ -203,13 +257,21 @@
         <li>
           <span>Trading Strategies</span>
           <ul>
-            <li><span>LPs Benefit From Volatility Harvesting</span></li>
-            <li><span>Interest Rate Arbitrage</span></li>
+            <li>
+              <span>LPs Benefit From Volatility Harvesting Interest Rates</span>
+            </li>
+            <li>
+              <span
+                >Traders Benefit From Volatility Harvesting Interest Rates</span
+              >
+            </li>
             <li><span>Fixed Rate Borrow</span></li>
             <li><span>Multiplied Variable Rate Exposure</span></li>
             <li><span>Spread Borrow</span></li>
           </ul>
         </li>
+        <li><span>Technical Teaser</span></li>
+        <li><span>Simulation</span></li>
       </ol>
       <h3 id="1-Terms-On-Demand" data-id="1-Terms-On-Demand">
         <span>1. Terms On Demand</span>
@@ -231,7 +293,7 @@
       <p>
         <span
           >The fixed rate in these terms is the market sentiment indicator
-          reflecting the market's expected average variable rates over the term
+          reflecting the market’s expected average variable rates over the term
           length on an underlying yield source, </span
         ><span class="ui-comment-inline-span">like stEth</span><span>.</span>
       </p>
@@ -239,12 +301,12 @@
         <span
           >Previously, a user would be forced to pick a variable or fixed rate
           market with a term set </span
-        ><span class="ui-comment-inline-span">to a specific maturity date</span
-        ><span>. This trends towards suboptimal LP fees and </span
-        ><span class="ui-comment-inline-span">UX</span
+        ><span class="ui-comment-inline-span">to a preset maturity date</span
+        ><span>. This trends towards suboptimal LP fees and user experi</span
+        ><span class="ui-comment-inline-span">e</span
         ><span
-          >. For example, users likely do not have a lot of demand to trade on
-          terms that have only 1 week remaining, because gains are lower. LPs
+          >nce. For example, users likely do not have a lot of demand to trade
+          on terms that have only 1 week remaining, because gains are lower. LPs
           tend to be incentivized to be in new terms, since fees are
           higher.</span
         >
@@ -292,11 +354,11 @@
       </p>
       <ul>
         <li>
-          <span>When a user is confident that</span
+          <span>When a user believes the</span
           ><span class="ui-comment-inline-span">
-            market sentiment for rates is </span
+            market sentiment for variable rates is </span
           ><strong><span class="ui-comment-inline-span">too high</span></strong
-          ><span>, they'd want to </span><strong><span>long</span></strong
+          ><span>, they’d want to </span><strong><span>long</span></strong
           ><span> the fixed rate, as they believe it is </span
           ><strong><span>higher</span></strong
           ><span>
@@ -306,9 +368,9 @@
         </li>
         <li>
           <span
-            >When a user is confident that market sentiment for rates is </span
+            >When a user believes the market sentiment for variable rates is </span
           ><strong><span>too low</span></strong
-          ><span>, they'd want to to </span><strong><span>short</span></strong
+          ><span>, they’d want to to </span><strong><span>short</span></strong
           ><span> the fixed rate, as they believe it is </span
           ><strong><span>lower</span></strong
           ><span>
@@ -320,13 +382,13 @@
       <p>
         <span
           >Since Hyperdrive facilitates both longs and shorts, it fully captures
-          market sentiment, letting the fixed rate reflect the market's
+          market sentiment, letting the fixed rate reflect the market’s
           beliefs.</span
         >
       </p>
       <p>
         <span
-          >Hyperdrive's approach doesn't require the use of funding rates or
+          >Hyperdrive’s approach doesn’t require the use of funding rates or
           liquidation engines to remain solvent through volatile market
           conditions. Instead, all of the accounting and mathematics required to
           keep the system safe are baked into the AMM itself.</span
@@ -335,21 +397,21 @@
       <p>
         <span
           >This creates a symmetrical market where users can drive the rates up
-          and down as market sentiment changes, just like a game of </span
+          and down as market sentiment changes, just like </span
         ><span class="ui-comment-inline-span"
           ><span class="ui-comment-inline-span"
-            ><span class="ui-comment-inline-span">flappy bird</span></span
+            ><span class="ui-comment-inline-span">t</span></span
           ></span
-        ><span>.</span>
+        ><span>he hyperdrive game above illustrates.</span>
       </p>
       <h3 id="4-Trading-Strategies" data-id="4-Trading-Strategies">
         <span>4. Trading Strategies</span>
       </h3>
       <h4
-        id="A-LPs-Benefit-From-Volatility-Harvesting"
-        data-id="A-LPs-Benefit-From-Volatility-Harvesting"
+        id="A-LPs-Benefit-From-Volatility-Harvesting-Interest-Rates"
+        data-id="A-LPs-Benefit-From-Volatility-Harvesting-Interest-Rates"
       >
-        <span>A. LPs Benefit From Volatility Harvesting</span>
+        <span>A. LPs Benefit From Volatility Harvesting Interest Rates</span>
       </h4>
       <blockquote>
         <p>
@@ -357,9 +419,8 @@
             >Every user trade is met with an equal and opposite LP trade</span
           >
         </p>
-        <ul>
-          <li><span>Sir Isaac Newton</span></li>
-        </ul>
+
+        <i>Sir Isaac Newton</i>
       </blockquote>
       <p>
         <span
@@ -367,9 +428,9 @@
           side. This means the LP will generally hold a position that is
           opposite to the </span
         ><span class="ui-comment-inline-span">market sentiment</span
-        ><span
-          >. Whether the market is right or wrong, all trades pay fees to the LP
-          holders.</span
+        ><span>
+          indicator. Whether the market is right or wrong, all trades pay fees
+          to the LP holders.</span
         >
       </p>
       <p>
@@ -395,13 +456,17 @@
           profiting.</span
         >
       </p>
-      <h4 id="B-Interest-Rate-Arbitrage" data-id="B-Interest-Rate-Arbitrage">
-        <span>B. I</span
-        ><span class="ui-comment-inline-span">Interest Rate Arbitrage</span>
+      <h4
+        id="B-Traders-Benefit-From-Volatility-Harvesting-Interest-Rates"
+        data-id="B-Traders-Benefit-From-Volatility-Harvesting-Interest-Rates"
+      >
+        <span>B. Traders Benefit From </span
+        ><span class="ui-comment-inline-span">Volatili</span
+        ><span>ty Harvesting Interest Rates</span>
       </h4>
       <p>
         <span
-          >Hyperdrive's long/short mechanism allows for arbitrageurs to reap the
+          >Hyperdrive’s long/short mechanism allows for arbitrageurs to reap the
           benefit of volatile changes in interest rates.</span
         >
       </p>
@@ -415,8 +480,8 @@
           <tr>
             <td style="text-align: center">
               <img
-                src="/log-dsr-rates.png"
-                alt="log dai savings rates"
+                src="https://i.imgur.com/rCmFheb.png"
+                alt=""
                 loading="lazy"
               />
             </td>
@@ -445,8 +510,12 @@
         <span>As can be seen in this graph generated by </span
         ><a href="https://trueblocks.io/" target="_blank" rel="noopener"
           ><span>trueblocks</span></a
-        ><span>, MakerDAO's </span
-        ><span class="ui-comment-inline-span">DSR</span
+        ><span>, MakerDAO’s </span
+        ><a
+          href="https://blog.makerdao.com/dai-savings-rate/"
+          target="_blank"
+          rel="noopener"
+          ><span class="ui-comment-inline-span">DSR</span></a
         ><span>
           follows a stepwise function. As the Stability Fee is changed, this
           allows for traders to quickly arbitrage the market sentiment to
@@ -490,9 +559,8 @@
         <span>D. Multiplied Variable Rate Exposure</span>
       </h4>
       <p>
-        <span>Hyperdrive allows users to get </span
-        ><span class="ui-comment-inline-span"
-          >as much variable exposure as they want</span
+        <span>Hyperdrive allows users to get m</span
+        ><span class="ui-comment-inline-span">ultiplied variable exposure</span
         ><span>
           by letting them borrow additional capital from the AMM at the current
           fixed rate and use it to open a short position.</span
@@ -501,12 +569,12 @@
       <p>
         <span
           >By opening a short position, the user is buying the variable yield
-          from the market's deployed assets. Users can buy interest on a higher
+          from the market’s deployed assets. Users can buy interest on a higher
           amount of capital than they provide. There are no liquidations, they
           just provide a maximum loss to ensure protocol safety. </span
-        ><span class="ui-comment-inline-span">Unlike every other market</span
+        ><span class="ui-comment-inline-span">Unlike other market</span
         ><span
-          >, a Hyperdrive short does not face the possibility of unlimited
+          >s, a Hyperdrive short does not face the possibility of unlimited
           loss.</span
         >
       </p>
@@ -514,10 +582,8 @@
         <span
           >Because this position earns multiplied variable interest, it provides
           a stabilizing force encouraging the fixed rate to converge upon
-          changes in the variable rate, </span
-        ><span class="ui-comment-inline-span"
-          >otherwise Interest Rate Arbitrage exists.</span
-        >
+          changes in the variable rate</span
+        ><span class="ui-comment-inline-span">.</span>
       </p>
       <h4 id="E-Spread-Borrow" data-id="E-Spread-Borrow">
         <span>E. Spread Borrow</span>
@@ -525,7 +591,7 @@
       <p>
         <span
           >Hyperdrive users can get multiplied fixed rate exposure and profit
-          from the spread between an asset's borrow rate and the current market
+          from the spread between an asset’s borrow rate and the current market
           sentiment or fixed rate.</span
         >
       </p>
@@ -553,7 +619,11 @@
         <thead>
           <tr>
             <th style="text-align: center">
-              <img src="/bunneyman.png" alt="" loading="lazy" />
+              <img
+                src="https://i.imgur.com/aphOgTj.png"
+                alt=""
+                loading="lazy"
+              />
             </th>
           </tr>
         </thead>
@@ -590,7 +660,7 @@
           rel="noopener"
           ><span>YieldSpace</span></a
         ><span>
-          paper. Optimised for fixed rate trading, this curve's main benefit is
+          paper. Optimised for fixed rate trading, this curve’s main benefit is
           curvature that adjusts with the passage of time.</span
         >
       </p>
@@ -607,8 +677,30 @@
           >. Similar attacks are possible in a multi-curvature multi-term
           universe. The Hyperdrive solution does away with multiple curves,
           instead reflecting the passage of time in each position, an approach
-          we're deeming “flat + curve”. Each position is the sum of matured and
+          we’re deeming “flat + curve”. Each position is the sum of matured and
           unmatured portions.</span
+        >
+      </p>
+      <h2 id="Simulation" data-id="Simulation"><span>Simulation</span></h2>
+      <p>
+        <span
+          >We’ve included an embedded simulation with code on the Hyperdrive
+          system. This notebook gives you the ability to configure different
+          parameters to explore profitability and market environments. The
+          embedded notebook has generated graphs on PNL and more. Initial
+          numbers look positive and we encourage you to explore on your own. We
+          will be cosntantly updating our research, stay tuned for more!</span
+        >
+      </p>
+      <p>
+        <sub
+          ><em
+            ><span
+              >The research described below is subject to further review,
+              clarification, and revision. The end design of any software is
+              subject to modification.</span
+            ></em
+          ></sub
         >
       </p>
       <script src="https://gist.github.com/villanuevawill/d224c23b30146bbf0733c8b9e5d4277b.js"></script>
