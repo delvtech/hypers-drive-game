@@ -16,7 +16,7 @@ export function Bar({ k, settings, position, size, color }: BarOptions) {
     "bar",
     // @ts-ignore
     k.body({ isSolid: true, isStatic: true }),
-    k.rect(100, size),
+    k.rect(100 * settings.SCALE, size),
     k.area(),
     k.anchor(position === "top" ? "topleft" : "botleft"),
     k.pos(k.width(), position === "top" ? 0 : k.height()),

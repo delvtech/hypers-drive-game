@@ -26,13 +26,14 @@ export class Trades {
     const { k, storage, settings, gameHeight } = this;
 
     // derive a gap width from liquidity
-    const gap = scale(
-      storage.liquidity,
-      MIN_LIQUIDITY,
-      MAX_LIQUIDITY,
-      settings.MIN_GAP,
-      settings.MAX_GAP
-    );
+    const gap =
+      scale(
+        storage.liquidity,
+        MIN_LIQUIDITY,
+        MAX_LIQUIDITY,
+        settings.MIN_GAP,
+        settings.MAX_GAP
+      ) * settings.SCALE;
 
     // derive a gap movement from the amount
     const gapYPosMovement = scale(
@@ -40,7 +41,8 @@ export class Trades {
       0,
       storage.liquidity,
       0,
-      deviation ?? (gameHeight - gap - 20) / 2
+      deviation ??
+        (gameHeight - gap - settings.MIN_BAR_HEIGHT * settings.SCALE) / 2
     );
 
     if (type === "LONG") {
@@ -49,10 +51,16 @@ export class Trades {
         this.gapYPos + gapYPosMovement
       );
     } else {
-      this.gapYPos = Math.max(gap / 2 + 10, this.gapYPos - gapYPosMovement);
+      this.gapYPos = Math.max(
+        gap / 2 + settings.MIN_BAR_HEIGHT,
+        this.gapYPos - gapYPosMovement
+      );
     }
 
-    const topBarHeight = Math.max(10, this.gapYPos - gap / 2);
+    const topBarHeight = Math.max(
+      settings.MIN_BAR_HEIGHT,
+      this.gapYPos - gap / 2
+    );
 
     // Make the bars red for longs and green for shorts
     const barColor = type === "LONG" ? [255, 0, 0] : [0, 255, 0];
@@ -69,7 +77,7 @@ export class Trades {
       k,
       settings,
       position: "bottom",
-      size: Math.max(10, gameHeight - topBarHeight - gap),
+      size: Math.max(settings.MIN_BAR_HEIGHT, gameHeight - topBarHeight - gap),
       color: barColor,
     });
   }

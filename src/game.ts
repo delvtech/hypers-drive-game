@@ -9,17 +9,6 @@ import { EventFeed } from "./objects/EventFeed";
 import { Trades } from "./objects/Trades";
 import { AudioManager } from "./AudioManager";
 
-let ratio = 0.6;
-
-let ww = window.innerWidth;
-let wh = window.innerHeight;
-let kaboomDimensions = {};
-if (ww * ratio > wh) {
-  kaboomDimensions = { w: wh / ratio, h: wh };
-} else {
-  kaboomDimensions = { w: ww, h: ww * ratio };
-}
-
 /**
  * Add default settings to a partial settings object
  */
@@ -33,6 +22,7 @@ function initSettings(settings?: Partial<Settings>): Settings {
     TIME_TO_HYPERDRIVE: 20,
     MIN_GAP: 180,
     MAX_GAP: 400,
+    MIN_BAR_HEIGHT: 10,
     DEVIATION: 90,
     DEVIATION_COOLDOWN: 1,
     TIC_RATE: 0.7,
@@ -41,6 +31,7 @@ function initSettings(settings?: Partial<Settings>): Settings {
     ADD_LIQUIDITY_CHANCE: 25,
     REMOVE_LIQUIDITY_CHANCE: 25,
     VOLUME: 50,
+    SCALE: 1,
     ...settings,
   };
 }
@@ -55,13 +46,13 @@ export const Z = {
 const SPEED_OF_LIGHT = 186_000; // mi/s
 const WARP_SPEED = SPEED_OF_LIGHT * 2;
 
+const FULL_WIDTH = 960;
+
 export function startGame(gameSettings?: Partial<Settings>) {
   const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
 
   // Create kaboom instance
   const k = kaboom({
-    width: 960,
-    height: 600,
     background: [20, 22, 30],
     // play music outside of focus
     backgroundAudio: true,
@@ -73,7 +64,10 @@ export function startGame(gameSettings?: Partial<Settings>) {
   const gameHeight = k.height();
 
   // Add defaults to settings
-  const settings = initSettings(gameSettings);
+  const settings = initSettings({
+    SCALE: Math.min(canvas.clientWidth / FULL_WIDTH, 1),
+    ...gameSettings,
+  });
   const {
     GRAVITY,
     JUMP_FORCE,
@@ -92,7 +86,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
   const events = new Events(settings);
 
   // Initiate reusable object classes outside the scenes
-  const eventFeed = new EventFeed(k);
+  const eventFeed = new EventFeed(k, settings);
   const trades = new Trades(k, storage, settings);
 
   // Load fonts
@@ -218,34 +212,34 @@ export function startGame(gameSettings?: Partial<Settings>) {
     const title = k.add([
       k.text("HYPERS DRIVE", {
         font: "M23",
-        size: 96,
+        size: 96 * settings.SCALE,
       }),
-      k.pos(gameWidth / 2, 100),
+      k.pos(gameWidth / 2, 100 * settings.SCALE),
       k.anchor("center"),
     ]);
 
     const subTitle = title.add([
       k.text("Can you handle the quantum leap", {
         font: "HardDrive",
-        size: 48,
+        size: 48 * settings.SCALE,
       }),
-      k.pos(0, 90),
+      k.pos(0, 90 * settings.SCALE),
       k.anchor("center"),
     ]);
 
     const instructions = subTitle.add([
       k.text("Press SPACE or touch to start the game...", {
         font: "M23",
-        size: 24,
+        size: 24 * settings.SCALE,
       }),
-      k.pos(0, 120),
+      k.pos(0, 120 * settings.SCALE),
       k.anchor("center"),
     ]);
 
     instructions.add([
       k.sprite("ryanGosling"),
-      k.scale(0.2, 0.2),
-      k.pos(0, 150),
+      k.scale(0.2 * settings.SCALE, 0.2 * settings.SCALE),
+      k.pos(0, 150 * settings.SCALE),
       k.anchor("center"),
 
       k.area(),
@@ -261,7 +255,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
     const transitionEventHandler = () => {
       k.get("star").forEach((star) => {
         star.onUpdate(() => {
-          star.pos.x -= randNum(1, settings.SPEED * 1.5);
+          star.pos.x -= randNum(1, settings.SPEED * 1.5 * settings.SCALE);
         });
       });
       audioManger.stop("StartMusic");
@@ -287,7 +281,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
     });
 
     // Establish gravity
-    k.setGravity(GRAVITY);
+    k.setGravity(GRAVITY * settings.SCALE);
 
     // Reset and add the event feed
     eventFeed.clear();
@@ -349,7 +343,10 @@ export function startGame(gameSettings?: Partial<Settings>) {
         k.stay(),
       ]);
       star.onUpdate(() => {
-        star.pos.x -= randNum(settings.SPEED * 1.2, settings.SPEED * 1.5);
+        star.pos.x -= randNum(
+          settings.SPEED * 1.2 * settings.SCALE,
+          settings.SPEED * 1.5 * settings.SCALE
+        );
       });
     });
 
@@ -362,9 +359,10 @@ export function startGame(gameSettings?: Partial<Settings>) {
       k.area(),
       k.body({
         // @ts-ignore
-        maxVel: FALLING_VELOCITY,
+        maxVel: FALLING_VELOCITY * settings.SCALE,
       }),
       k.z(Z.player),
+      k.scale(Math.max(settings.SCALE, 0.75)),
     ]);
     player.play("drive");
 
@@ -388,8 +386,9 @@ export function startGame(gameSettings?: Partial<Settings>) {
         ["SPEED", commify(basePlayerSpeed)],
       ],
       {
-        x: 20,
-        y: 20,
+        x: 20 * settings.SCALE,
+        y: 20 * settings.SCALE,
+        scale: settings.SCALE,
       }
     );
 
@@ -398,7 +397,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
     // Jump control which increases the score and shows a "+fees" message.
     const onJumpHandler = () => {
       // Make the player jump upward
-      player.jump(JUMP_FORCE);
+      player.jump(JUMP_FORCE * settings.SCALE);
 
       // Tween the angle of the car
       accelerateTween?.cancel();
@@ -432,9 +431,9 @@ export function startGame(gameSettings?: Partial<Settings>) {
 
       const feesText = k.add([
         k.text("+Fees", {
-          size: 18,
+          size: 18 * settings.SCALE,
         }),
-        k.pos(gameWidth - 50, 80),
+        k.pos(gameWidth - 50 * settings.SCALE, 80 * settings.SCALE),
         k.anchor("center"),
         Z.stars + 1,
       ]);
@@ -528,14 +527,14 @@ export function startGame(gameSettings?: Partial<Settings>) {
         player.pos.x,
         startingPlayerX,
         finalPlayerX,
-        TIME_TO_HYPERDRIVE,
+        TIME_TO_HYPERDRIVE * settings.SCALE,
         0
       );
 
       // Tween the SPEED setting to affect the movement of background objects.
       speedTween = k.tween(
-        SPEED,
-        FINAL_SPEED,
+        SPEED * settings.SCALE,
+        FINAL_SPEED * settings.SCALE,
         duration,
         (speed) => {
           settings.SPEED = speed;
@@ -834,7 +833,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
     const title = k.add([
       k.text("HYPERDRIVE", {
         font: "M23",
-        size: 96,
+        size: 96 * settings.SCALE,
       }),
       k.pos(gameWidth / 2, gameHeight / 3),
       k.anchor("center"),
@@ -846,9 +845,9 @@ export function startGame(gameSettings?: Partial<Settings>) {
       const subTitle = title.add([
         k.text("Coming in the year 2023", {
           font: "HardDrive",
-          size: 56,
+          size: 56 * settings.SCALE,
         }),
-        k.pos(0, 100),
+        k.pos(0, 100 * settings.SCALE),
         k.anchor("center"),
         k.opacity(40),
         k.fadeIn(6),
@@ -858,7 +857,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
         subTitle.add([
           k.text("Built By Element Finance", {
             font: "M23",
-            size: 24,
+            size: 24 * settings.SCALE,
           }),
           k.pos(0, 250),
           k.anchor("center"),
@@ -885,12 +884,16 @@ export function startGame(gameSettings?: Partial<Settings>) {
   // GAME OVER, MAN
   //////////////////////////////////////////////////////////////////////////////
   k.scene("gameover", () => {
-    k.add([k.text("Game over!"), k.pos(gameWidth / 2, 50), k.anchor("center")]);
+    k.add([
+      k.text("Game over!"),
+      k.pos(gameWidth / 2, 50 * settings.SCALE),
+      k.anchor("center"),
+    ]);
     k.add([
       k.text("Press SPACE or TOUCH to restart", {
-        size: 20,
+        size: 20 * settings.SCALE,
       }),
-      k.pos(gameWidth / 2, 250),
+      k.pos(gameWidth / 2, 250 * settings.SCALE),
       k.anchor("center"),
     ]);
 
@@ -909,23 +912,24 @@ export function startGame(gameSettings?: Partial<Settings>) {
       {
         alignment: "center",
         x: gameWidth / 2,
-        y: 270,
+        y: 270 * settings.SCALE,
+        scale: settings.SCALE,
       }
     );
 
     const highScoreObj = k.add([
       k.text(`HIGH SCORE: ${localStorage.highScore}`, {
-        size: 18,
+        size: 18 * settings.SCALE,
       }),
-      k.pos(gameWidth / 2, stats.bottomY() + 40),
+      k.pos(gameWidth / 2, stats.bottomY() + 40 * settings.SCALE),
       k.anchor("center"),
     ]);
 
     k.add([
       k.text("Press ESC to return to the start menu", {
-        size: 20,
+        size: 20 * settings.SCALE,
       }),
-      k.pos(gameWidth / 2, highScoreObj.pos.y + 100),
+      k.pos(gameWidth / 2, highScoreObj.pos.y + 100 * settings.SCALE),
       k.anchor("center"),
     ]);
 

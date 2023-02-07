@@ -8,6 +8,7 @@ import {
 } from "kaboom";
 import { commify } from "../utils";
 import { Z } from "../game";
+import { Settings } from "../settings";
 
 export type Stat<L extends string> = [L, string | number];
 
@@ -15,16 +16,20 @@ export interface StatsOptions {
   alignment?: "left" | "center" | "right";
   x?: number;
   y?: number;
+  scale?: number;
 }
 
 export class Stats<L extends string = string> {
-  public container: GameObj<PosComp | AnchorComp | ZComp>;
   private statsByLabel: Record<L, StatStorage>;
 
+  public container: GameObj<PosComp | AnchorComp | ZComp>;
+
   constructor(k: KaboomCtx, stats: Stat<L>[], options?: StatsOptions) {
+    const { alignment, x = 20, y = 20, scale = 1 } = options || {};
+
     let anchor: Parameters<typeof k.anchor>[0];
 
-    switch (options?.alignment) {
+    switch (alignment) {
       case "center":
         anchor = "top";
         break;
@@ -39,7 +44,7 @@ export class Stats<L extends string = string> {
     }
 
     this.container = k.add([
-      k.pos(options?.x ?? 0, options?.y ?? 0),
+      k.pos(x, y),
       k.anchor(anchor),
       k.z(Z.hud),
     ]);
@@ -51,9 +56,9 @@ export class Stats<L extends string = string> {
           {
             obj: this.container.add([
               k.text(formatStat(label, value), {
-                size: 18,
+                size: 18 * scale,
               }),
-              k.pos(0, 20 * i),
+              k.pos(0, 20 * scale * i),
               k.anchor(anchor),
             ]),
             initialValue: value,

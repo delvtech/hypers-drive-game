@@ -150,6 +150,8 @@
 
     #doc {
       max-width: 960px;
+      padding: 0 6vw;
+      box-sizing: border-box;
       margin: 0 auto;
       height: 100%;
       padding: 0px 12px;
@@ -185,6 +187,19 @@
       background-color: rgb(63, 63, 63);
       cursor: default;
     }
+
+    #game-container {
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      padding-top: 62.5%;
+    }
+
+    #game-canvas {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
   </style>
 
   <body>
@@ -198,21 +213,17 @@
       </h1>
       <h4>Authored by Element Finance</h4>
       <p>
-        <span class="ui-comment-inline-span">Hyperdrive</span
-        ><span>
-          is the next research leap from the Element Finance team on variable
-          and fixed rate primitives. </span
-        ><em
-          ><span
-            >No preset expiration dates, no fragmented liquidity, and no LP
-            rollovers, aka everlasting liquidity</span
-          ><span class="ui-comment-inline-span"
-            ><span class="ui-comment-inline-span">.</span></span
-          ></em
+        Hyperdrive is the next research leap from the Element Finance team on
+        variable and fixed rate primitives.<em
+          >No preset expiration dates, no fragmented liquidity, and no LP
+          rollovers, aka everlasting liquidity.</em
         >
       </p>
+
       <button id="play-game-button">Play Hypers Drive Game</button>
-      <canvas id="game-canvas"></canvas>
+      <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+      </div>
 
       <h2 id="A-New-Way-To-Trade-Rates" data-id="A-New-Way-To-Trade-Rates">
         <span>A New Way To Trade Rates</span>

@@ -44,6 +44,11 @@ export interface Settings {
   MAX_GAP: number;
 
   /**
+   * The minimum height of a bar from the edge of the screen.
+   */
+  MIN_BAR_HEIGHT: number;
+
+  /**
    * The max distance a gap can be from the gap before it.
    */
   DEVIATION: number;
@@ -84,4 +89,9 @@ export interface Settings {
    * The volume %
    */
   VOLUME: number;
+
+  /**
+   * The scale at which the items in the game should rendered
+   */
+  SCALE: number;
 }
