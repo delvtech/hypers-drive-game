@@ -1,11 +1,13 @@
 import { startGame } from "./game";
 import "./style.css";
 
+const gameCanvas = document.getElementById("game-canvas");
+
 function handleButtonClick() {
-  if (document.getElementById("game-canvas").style.display !== "block") {
+  if (gameCanvas.style.display !== "block") {
     startGame();
-    document.getElementById("game-canvas").style.display = "block";
-    document.getElementById("game-canvas").focus();
+    gameCanvas.style.display = "block";
+    gameCanvas.focus();
     (
       document.getElementById("play-game-button") as HTMLButtonElement
     ).disabled = true;

@@ -9,17 +9,6 @@ import { EventFeed } from "./objects/EventFeed";
 import { Trades } from "./objects/Trades";
 import { AudioManager } from "./AudioManager";
 
-let ratio = 0.6;
-
-let ww = window.innerWidth;
-let wh = window.innerHeight;
-let kaboomDimensions = {};
-if (ww * ratio > wh) {
-  kaboomDimensions = { w: wh / ratio, h: wh };
-} else {
-  kaboomDimensions = { w: ww, h: ww * ratio };
-}
-
 /**
  * Add default settings to a partial settings object
  */
@@ -55,8 +44,33 @@ export const Z = {
 const SPEED_OF_LIGHT = 186_000; // mi/s
 const WARP_SPEED = SPEED_OF_LIGHT * 2;
 
+const fullWidth = 960;
+const fullHeight = 600;
+
 export function startGame(gameSettings?: Partial<Settings>) {
   const canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
+
+  // Manage touch scrolling on the canvas
+  let startTouchY: number | undefined;
+  canvas.addEventListener("touchmove", ({ touches }) => {
+    // don't scroll if using more than one finger (maybe they're trying to zoom)
+    if (touches.length !== 1) {
+      return;
+    }
+
+    const touchY = touches[0].clientY;
+
+    if (!startTouchY) {
+      startTouchY = touchY;
+      return;
+    }
+
+    window.scrollBy(0, (startTouchY - touchY) * 1.8);
+    startTouchY = undefined;
+  });
+  canvas.addEventListener("touchend", () => {
+    startTouchY = undefined;
+  });
 
   // Create kaboom instance
   const k = kaboom({
@@ -67,6 +81,16 @@ export function startGame(gameSettings?: Partial<Settings>) {
     backgroundAudio: true,
     canvas,
   });
+
+  const sizeScale = canvas.parentElement.clientWidth / fullWidth;
+  const newWidth = fullWidth * sizeScale;
+  const newHeight = fullHeight * sizeScale;
+
+  canvas.style.scale = sizeScale.toString();
+  canvas.style.marginLeft = `${-(fullWidth / 2 - newWidth / 2)}px`;
+  canvas.style.marginRight = `${-(fullWidth / 2 - newWidth / 2)}px`;
+  canvas.style.marginTop = `${-(fullHeight / 2 - newHeight / 2)}px`;
+  canvas.style.marginBottom = `${-(fullHeight / 2 - newHeight / 2)}px`;
 
   // Calculate once and reuse
   const gameWidth = k.width();
