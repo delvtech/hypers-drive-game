@@ -4,7 +4,7 @@ Hyperdrive is the next research leap from the Element team on variable and fixed
 
 ## A New Way To Trade Rates
 
-The hyperdrive AMM introduces a market sentiment indicator (MSI) for DeFi interest rates. Almost all DeFi interest rates are constantly changing ([sometimes by the block](https://github.com/element-fi/robrox/pull/6)). In order to gauge market sentiment, a balanced system of longs and shorts must exist between fixed and variable rates, in order to capture the wisdom of the crowd. Hyperdrive provides this. The fixed rate represented in Hyperdrive is the market sentiment indicator.
+The hyperdrive AMM introduces a market sentiment indicator (MSI) for DeFi interest rates. Almost all DeFi interest rates are constantly changing ([sometimes by the block](https://github.com/delv-tech/robrox/pull/6)). In order to gauge market sentiment, a balanced system of longs and shorts must exist between fixed and variable rates, in order to capture the wisdom of the crowd. Hyperdrive provides this. The fixed rate represented in Hyperdrive is the market sentiment indicator.
 
 Hyperdrive lets users short or long the sentiment indicator. If a user thinks the sentiment indicator is too high, they'll go long because they like the fixed rate. If they think it is too low, they go short because they like the variable rate. Which side are you on?
 
