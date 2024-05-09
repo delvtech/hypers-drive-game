@@ -884,7 +884,7 @@ export function startGame(gameSettings?: Partial<Settings>) {
 
       k.wait(1, () => {
         subTitle.add([
-          k.text("Built By Element Finance", {
+          k.text("Built By DELV", {
             font: "M23",
             size: 24,
           }),

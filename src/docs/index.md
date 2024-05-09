@@ -1,6 +1,6 @@
 # Hyperdrive
 
-Hyperdrive is the next research leap from the Element team on variable and fixed rate primitives. _No preset expiration dates, no fragmented liquidity, and no LP rollovers, aka everlasting liquidity._
+Hyperdrive is the next research leap from the DELV team on variable and fixed rate primitives. _No preset expiration dates, no fragmented liquidity, and no LP rollovers, aka everlasting liquidity._
 
 ## A New Way To Trade Rates
 
@@ -111,6 +111,6 @@ If a lending platform like MakerDAO charges a 1% rate to borrow DAI against this
 | :----------------------------------: |
 |       _Shut up and Hyperdrive_       |
 
-Hyperdrive is a natural extension of the concepts introduced in the first iteration of the [Element Protocol](https://paper.element.fi/) which implemented a customised version of the constant power sum curve invariant from the foundational [YieldSpace](https://yield.is/YieldSpace.pdf) paper. Optimised for fixed rate trading, this curve's main benefit is curvature that adjusts with the passage of time.
+Hyperdrive is a natural extension of the concepts introduced in the first iteration of the [Element Protocol](https://docs-delv.gitbook.io/element-developer-docs) which implemented a customised version of the constant power sum curve invariant from the foundational [YieldSpace](https://yield.is/YieldSpace.pdf) paper. Optimised for fixed rate trading, this curve's main benefit is curvature that adjusts with the passage of time.
 
 Changing curvature of trading curves can be dangerous for protocol safety, as evidenced by the [Curve hack](https://medium.com/@peter_4205/curve-vulnerability-report-a1d7630140ec). Similar attacks are possible in a multi-curvature multi-term universe. The Hyperdrive solution does away with multiple curves, instead reflecting the passage of time in each position, an approach we're deeming "flat + curve". Each position is the sum of matured and unmatured portions.
